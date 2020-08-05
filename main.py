@@ -26,9 +26,9 @@ cutouts = {
 device, rows, cols = chroma_init()
 
 
-def process_image(image, cutout, sections, axis=0):
-    area = image.crop(cutout)
-    cv_area = np.array(area)
+def process_image(cutout, sections, axis=0):
+    image = ImageGrab.grab(cutout)
+    cv_area = np.array(image)
     # # Convert RGB to BGR
     # cv_area = cv_area[:, :, ::-1].copy()
     average = cv_area.mean(axis=axis)
@@ -47,8 +47,7 @@ def nodemcu_prep(data):
 
 
 def imageloop():
-    image = ImageGrab.grab()
-    average_sections_mcu, average_sections_razer = process_image(image, cutouts.get('center'), points)
+    average_sections_mcu, average_sections_razer = process_image(cutouts.get('center'), points)
     chroma_draw(average_sections_razer, device, rows, cols)
     sock.sendto(bytes(nodemcu_prep(average_sections_mcu), 'utf-8'), ('192.168.23.10', 13321))
 
