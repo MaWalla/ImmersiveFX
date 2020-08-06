@@ -20,10 +20,9 @@ def chroma_draw(data, device, rows, cols):
     # range Y 0-5
     # range X 0-21
 
-    for row in range(rows):
-        for col in range(cols):
-            r, g, b, = data[col].mean(axis=0)
-
+    for col in range(cols):
+        r, g, b, = data[col].mean(axis=0)
+        for row in range(rows):
             device.fx.advanced.matrix[row, col] = r, g, b
 
     device.fx.advanced.draw()

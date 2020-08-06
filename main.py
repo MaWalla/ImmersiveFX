@@ -1,9 +1,10 @@
 import json
 import socket
+import threading
 from time import sleep
 from screeninfo import get_monitors
 
-from PIL import ImageGrab
+from PIL import ImageGrab, Image
 import numpy as np
 
 from razer import chroma_init, chroma_draw
@@ -28,9 +29,8 @@ device, rows, cols = chroma_init()
 
 def process_image(cutout, sections, axis=0):
     image = ImageGrab.grab(cutout)
+    image.thumbnail((128, 128), Image.NEAREST)
     cv_area = np.array(image)
-    # # Convert RGB to BGR
-    # cv_area = cv_area[:, :, ::-1].copy()
     average = cv_area.mean(axis=axis)
     average_sections_mcu = np.array_split(average, sections, axis)
     average_sections_razer = np.array_split(average, cols, axis)
@@ -49,9 +49,15 @@ def nodemcu_prep(data):
 def imageloop():
     average_sections_mcu, average_sections_razer = process_image(cutouts.get('center'), points)
     chroma_draw(average_sections_razer, device, rows, cols)
-    sock.sendto(bytes(nodemcu_prep(average_sections_mcu), 'utf-8'), ('192.168.23.10', 13321))
+    threading.Thread(
+        target=sock.sendto,
+        args=(
+            bytes(nodemcu_prep(average_sections_mcu), 'utf-8'), ('192.168.23.10', 13321)
+        ),
+        kwargs={}
+    ).start()
 
 
 while True:
-    # sleep(0.07)
+    # sleep(0.033)
     imageloop()
