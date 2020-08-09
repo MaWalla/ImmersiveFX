@@ -30,6 +30,13 @@ razer_enabled = config.get('razer')
 # can be: left, right or bottom
 nodemcus = config.get('nodemcus')
 
+
+if fps and fps < 0:
+    print('Please set the fps to 0 or above or remove the option.')
+    print('Last time I checked, time travel wasn\'t a thing yet.')
+    exit()
+
+
 if not razer_enabled and not nodemcus:
     print('No devices. Either set |"razer": true| or or define at least one nodemcu')
     exit()
@@ -118,6 +125,14 @@ def imageloop():
             ),
             kwargs={}
         ).start()
+
+
+print('----------------------------------')
+print('Welcome to ImmersiveFX')
+print('You got Razer support %s ' % ('enabled.' if razer_enabled else 'disabled.'))
+print('There are %s NodeMCUs configured.' % len(nodemcus))
+print('The FPS are set to %s.' % (fps if fps else 'unlimited'))
+print('----------------------------------')
 
 
 while True:
