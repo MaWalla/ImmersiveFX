@@ -4,7 +4,7 @@ import threading
 from time import sleep
 from screeninfo import get_monitors
 
-from PIL import ImageGrab, Image
+from PIL import ImageGrab
 import numpy as np
 
 try:
@@ -92,10 +92,10 @@ def nodemcu_draw(leds, cutout, inverse):
         average_mcu = np.flip(average_mcu)
 
     return json.dumps(
-        {'individual': {
-            # streamline doesn't work yet for some reason
-            # 'led_list': [rgb.mean(axis=0).astype(int).tolist() for rgb in average_mcu]
-            'led_list': {step: rgb.mean(axis=0).astype(int).tolist() for step, rgb in enumerate(average_mcu)}
+        {'streamline': {
+            # streamline easily gives 5-10x more performance than individual
+            'led_list': [rgb.mean(axis=0).astype(int).tolist() for rgb in average_mcu]
+            # 'led_list': {step: rgb.mean(axis=0).astype(int).tolist() for step, rgb in enumerate(average_mcu)}
         }}
     )
 
