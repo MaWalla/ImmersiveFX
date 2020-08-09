@@ -25,7 +25,7 @@ razer_enabled = config.get('razer')
 # ip: string ip address of the nodemcu in the network
 # port: integer UDP port the nodemcu listens on
 # leds: integer amount of leds connected to it
-# inverse: boolean, set it to true if the led strip goes right-to-left
+# flip: boolean, switches beginning and end to fit your need and setup
 # cutout: string which part of the screen to use for the color display
 # can be: left, right or bottom
 nodemcus = config.get('nodemcus')
@@ -49,9 +49,9 @@ def check_nodemcu_config():
         port = nodemcu.get('port')
         leds = nodemcu.get('leds')
         cutout = nodemcu.get('cutout')
-        inverse = nodemcu.get('inverse')
+        flip = nodemcu.get('flip')
 
-        if not id or not ip or not port or not leds or cutout not in ['left', 'right', 'bottom'] or inverse is None:
+        if not id or not ip or not port or not leds or cutout not in ['left', 'right', 'bottom'] or flip is None:
             print('One or more NodeMCU configs are incomplete. Please fix the file and retry')
             exit()
 
@@ -84,11 +84,11 @@ def process_image(cutout):
     return average
 
 
-def nodemcu_draw(leds, cutout, inverse):
+def nodemcu_draw(leds, cutout, flip):
     average = process_image(cutout)
     average_mcu = np.array_split(average, leds, axis=0)
 
-    if inverse and cutout not in ['left', 'right']:
+    if flip:
         average_mcu = np.flip(average_mcu)
 
     return json.dumps(
@@ -109,12 +109,12 @@ def imageloop():
         port = nodemcu.get('port')
         leds = nodemcu.get('leds')
         cutout = nodemcu.get('cutout')
-        inverse = nodemcu.get('inverse')
+        flip = nodemcu.get('flip')
 
         threading.Thread(
             target=sock.sendto,
             args=(
-                bytes(nodemcu_draw(leds, cutout, inverse), 'utf-8'), (ip, port)
+                bytes(nodemcu_draw(leds, cutout, flip), 'utf-8'), (ip, port)
             ),
             kwargs={}
         ).start()
