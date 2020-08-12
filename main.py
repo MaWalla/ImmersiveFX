@@ -28,6 +28,12 @@ benchmark = config.get('benchmark') or False
 razer_enabled = config.get('razer')
 
 
+# string, defines the cutout size from the screen border towards the inside
+# can be 'low', 'medium' or 'high'. High may puts the most load on the CPU,
+# but offers more detail. This setting can also be subject to personal preference
+preset = config.get('preset') or 'medium'
+
+
 # Takes a list of dicts(objects). Each one needs the following keys:
 # id: string to identify the device
 # ip: string ip address of the nodemcu in the network
@@ -91,11 +97,27 @@ h = monitor.height  # more shortcuts yay
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
 
-cutouts = {
-    'left': (0, 0, w - w * 0.8, h),
-    'right': (w * 0.8, 0, w, h),
-    'bottom': (0, h - h * 0.33, w, h),
+
+cutout_presets = {
+    'low': {
+        'left': (0, 0, w - w * 0.92, h),
+        'right': (w * 0.92, 0, w, h),
+        'bottom': (0, h - h * 0.11, w, h),
+    },
+    'medium': {
+        'left': (0, 0, w - w * 0.86, h),
+        'right': (w * 0.86, 0, w, h),
+        'bottom': (0, h - h * 0.22, w, h),
+    },
+    'high': {
+        'left': (0, 0, w - w * 0.8, h),
+        'right': (w * 0.8, 0, w, h),
+        'bottom': (0, h - h * 0.33, w, h),
+    },
 }
+
+
+cutouts = {**cutout_presets.get(preset)}
 
 
 def process_image(cutout):
