@@ -1,7 +1,7 @@
 import json
 import socket
 import threading
-from time import sleep
+from time import sleep, time
 from screeninfo import get_monitors
 
 from PIL import ImageGrab
@@ -17,9 +17,17 @@ except FileNotFoundError:
 # integer value, sets the fps. 0 for not setting it means unlimited fps
 # reducing this value reduces strain on cpu
 fps = config.get('fps')
+
+
+# boolean, decides on whether to run the loop though time measurement or not
+benchmark = config.get('benchmark') or False
+
+
 # decides on whether to use support for razer keyboards or not.
 # Currently supported is the Razer Blackwidow Chroma 2014. Needs openrazer.
 razer_enabled = config.get('razer')
+
+
 # Takes a list of dicts(objects). Each one needs the following keys:
 # id: string to identify the device
 # ip: string ip address of the nodemcu in the network
@@ -31,6 +39,11 @@ razer_enabled = config.get('razer')
 nodemcus = config.get('nodemcus')
 
 
+# This list gets populated during processing the nodemcu config.
+# if Razer is in use, it gets prepopulated with bottom.
+used_cutouts = ['bottom'] if razer_enabled else []
+
+
 if fps and fps < 0:
     print('Please set the fps to 0 or above or remove the option.')
     print('Last time I checked, time travel wasn\'t a thing yet.')
@@ -38,7 +51,7 @@ if fps and fps < 0:
 
 
 if not razer_enabled and not nodemcus:
-    print('No devices. Either set |"razer": true| or or define at least one nodemcu')
+    print('No devices. Either set |"razer": true| in the config or define at least one NodeMCU')
     exit()
 
 if razer_enabled:
@@ -46,7 +59,10 @@ if razer_enabled:
     device, rows, cols = chroma_init()
 
 
-def check_nodemcu_config():
+def process_nodemcu_config():
+    """
+    If there are NodeMCUs configured, checks if their configs are complete and optimize the script to their cutouts
+    """
     if not nodemcus:
         return None
 
@@ -62,8 +78,11 @@ def check_nodemcu_config():
             print('One or more NodeMCU configs are incomplete. Please fix the file and retry')
             exit()
 
+        if cutout not in used_cutouts:
+            used_cutouts.append(cutout)
 
-check_nodemcu_config()
+
+process_nodemcu_config()
 
 
 monitor = get_monitors()[0]  # for now, just take the first one's boundaries
@@ -91,8 +110,8 @@ def process_image(cutout):
     return average
 
 
-def nodemcu_draw(leds, cutout, flip):
-    average = process_image(cutout)
+def nodemcu_draw(pixel_data, leds, cutout, flip):
+    average = pixel_data.get(cutout)
     average_mcu = np.array_split(average, leds, axis=0)
 
     if flip:
@@ -100,16 +119,15 @@ def nodemcu_draw(leds, cutout, flip):
 
     return json.dumps(
         {'streamline': {
-            # streamline easily gives 5-10x more performance than individual
             'led_list': [rgb.mean(axis=0).astype(int).tolist() for rgb in average_mcu]
-            # 'led_list': {step: rgb.mean(axis=0).astype(int).tolist() for step, rgb in enumerate(average_mcu)}
         }}
     )
 
 
 def imageloop():
+    pixel_data = {cutout: process_image(cutout) for cutout in used_cutouts}
     if razer_enabled:
-        average_razer = np.array_split(process_image(cutouts.get('center')), cols, axis=0)
+        average_razer = np.array_split(pixel_data.get('center'), cols, axis=0)
         chroma_draw(average_razer, device, rows, cols)
     for nodemcu in nodemcus:
         ip = nodemcu.get('ip')
@@ -121,7 +139,7 @@ def imageloop():
         threading.Thread(
             target=sock.sendto,
             args=(
-                bytes(nodemcu_draw(leds, cutout, flip), 'utf-8'), (ip, port)
+                bytes(nodemcu_draw(pixel_data, leds, cutout, flip), 'utf-8'), (ip, port)
             ),
             kwargs={}
         ).start()
@@ -135,7 +153,18 @@ print('The FPS are set to %s.' % (fps if fps else 'unlimited'))
 print('----------------------------------')
 
 
+def timed(method):
+    start = time()
+    method()
+    elapsed = (time() - start) * 1000
+    print('Cycle took %s ms' % elapsed)
+
+
 while True:
     if fps:
         sleep(1 / fps)
-    imageloop()
+
+    if benchmark:
+        timed(imageloop)
+    else:
+        imageloop()
