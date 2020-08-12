@@ -1,0 +1,3 @@
+numpy==1.19.1
+Pillow==7.2.0
+screeninfo==0.6.5
