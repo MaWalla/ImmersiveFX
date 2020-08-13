@@ -29,8 +29,8 @@ razer_enabled = config.get('razer')
 
 
 # string, defines the cutout size from the screen border towards the inside
-# can be 'low', 'medium' or 'high'. High may puts the most load on the CPU,
-# but offers more detail. This setting can also be subject to personal preference
+# can be 'low', 'medium' or 'high'. High puts the most load on the CPU,
+# but offers more detail. This setting can also be subject to personal preference.
 preset = config.get('preset') or 'medium'
 
 
@@ -120,14 +120,14 @@ cutout_presets = {
 cutouts = {**cutout_presets.get(preset)}
 
 
-def process_image(cutout):
+def process_image(image, cutout):
     if cutout in ['left', 'right']:
         axis = 1
     else:
         axis = 0
 
-    image = ImageGrab.grab(cutouts.get(cutout))
-    cv_area = np.array(image)
+    crop = image.crop(cutouts.get(cutout))
+    cv_area = np.array(crop)
     average = cv_area.mean(axis=axis)
     return average
 
@@ -147,10 +147,13 @@ def nodemcu_draw(pixel_data, leds, cutout, flip):
 
 
 def imageloop():
-    pixel_data = {cutout: process_image(cutout) for cutout in used_cutouts}
+    image = ImageGrab.grab()
+    pixel_data = {cutout: process_image(image, cutout) for cutout in used_cutouts}
+
     if razer_enabled:
         average_razer = np.array_split(pixel_data.get('center'), cols, axis=0)
         chroma_draw(average_razer, device, rows, cols)
+
     for nodemcu in nodemcus:
         ip = nodemcu.get('ip')
         port = nodemcu.get('port')
