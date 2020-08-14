@@ -23,6 +23,11 @@ fps = config.get('fps')
 benchmark = config.get('benchmark') or False
 
 
+# integer, ranges from 1000 to 12000 in steps of 100.
+# so far only affects NodeMCUs
+kelvin = config.get('kelvin')
+
+
 # decides on whether to use support for razer keyboards or not.
 # Currently supported is the Razer Blackwidow Chroma 2014. Needs openrazer.
 razer_enabled = config.get('razer')
@@ -141,7 +146,8 @@ def nodemcu_draw(pixel_data, leds, cutout, flip):
 
     return json.dumps(
         {'streamline': {
-            'led_list': [rgb.mean(axis=0).astype(int).tolist() for rgb in average_mcu]
+            'led_list': [rgb.mean(axis=0).astype(int).tolist() for rgb in average_mcu],
+            'kelvin': kelvin,
         }}
     )
 
