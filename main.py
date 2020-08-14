@@ -7,6 +7,8 @@ from screeninfo import get_monitors
 from PIL import ImageGrab
 import numpy as np
 
+from pulse import get_bands
+
 try:
     with open('config.json') as file:
         config = json.load(file)
@@ -192,10 +194,12 @@ def timed(method):
 
 
 while True:
-    if fps:
-        sleep(1 / fps)
+    # if fps:
+    #     sleep(1 / fps)
 
-    if benchmark:
-        timed(imageloop)
-    else:
-        imageloop()
+    # if benchmark:
+    #     timed(imageloop)
+    # else:
+    #     imageloop()
+
+    get_bands()
