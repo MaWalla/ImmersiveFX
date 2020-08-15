@@ -8,9 +8,10 @@ from pulseviz import bands
 
 class PulseViz:
 
-    def __init__(self, sock, nodemcus, steps, source_name):
+    def __init__(self, sock, nodemcus, kelvin, steps, source_name):
         self.sock = sock
         self.nodemcus = nodemcus
+        self.kelvin = kelvin
 
         self.band_mapping = {
             step: [
@@ -56,7 +57,7 @@ class PulseViz:
         else:
             max_color = self.band_mapping.get(np.argmax(values))
 
-        output_color = ((np.array(converted_color) + np.array(max_color)) / 2.0)
+        output_color = ((converted_color + np.array(max_color)) / 2.0)
 
         if np.isnan(output_color.max()):
             output_color = [0, 0, 0]
@@ -75,11 +76,10 @@ class PulseViz:
                 kwargs={}
             ).start()
 
-    @staticmethod
-    def draw(color):
+    def draw(self, color):
         return json.dumps(
             {'single_color': {
                 'input_color': color,
-                'kelvin': 3600,
+                'kelvin': self.kelvin,
             }}
         )

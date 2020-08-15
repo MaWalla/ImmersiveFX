@@ -106,7 +106,7 @@ if fxmode == 'screenfx':
     fx = ScreenFX(sock, kelvin, razer_enabled, nodemcus, used_cutouts, preset)
 
 elif fxmode == 'pulseviz':
-    fx = PulseViz(sock, nodemcus, 33, source_name)
+    fx = PulseViz(sock, nodemcus, kelvin, 33, source_name)
     fx.start_bands()
 else:
     print('No valid fxmode set, please pick screenfx or pulseviz')
