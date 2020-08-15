@@ -7,7 +7,7 @@ from screeninfo import get_monitors
 from PIL import ImageGrab
 import numpy as np
 
-from pulse import get_bands
+from pulse import draw_bands
 
 try:
     with open('config.json') as file:
@@ -194,12 +194,12 @@ def timed(method):
 
 
 while True:
-    # if fps:
-    #     sleep(1 / fps)
+    if fps:
+        sleep(1 / fps)
 
     # if benchmark:
     #     timed(imageloop)
     # else:
     #     imageloop()
 
-    get_bands()
+    draw_bands(sock, nodemcus)
