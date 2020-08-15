@@ -12,6 +12,7 @@ try:
         config = json.load(file)
 except FileNotFoundError:
     print('config file not found. you need to place config.json into the main.py directory.')
+    print('There is a config.json.example to use as starting point.')
     exit()
 
 # integer value, sets the fps. 0 for not setting it means unlimited fps
