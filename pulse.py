@@ -71,12 +71,12 @@ class PulseViz:
             threading.Thread(
                 target=self.sock.sendto,
                 args=(
-                    bytes(self.draw(output_color), 'utf-8'), (ip, port)
+                    bytes(self.prepare_data(output_color), 'utf-8'), (ip, port)
                 ),
                 kwargs={}
             ).start()
 
-    def draw(self, color):
+    def prepare_data(self, color):
         return json.dumps(
             {'single_color': {
                 'input_color': color,

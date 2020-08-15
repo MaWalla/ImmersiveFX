@@ -55,20 +55,6 @@ class ScreenFX:
         average = cv_area.mean(axis=axis)
         return average
 
-    def nodemcu_draw(self, pixel_data, leds, cutout, flip):
-        average = pixel_data.get(cutout)
-        average_mcu = np.array_split(average, leds, axis=0)
-
-        if flip:
-            average_mcu = np.flip(average_mcu)
-
-        return json.dumps(
-            {'streamline': {
-                'led_list': [rgb.mean(axis=0).astype(int).tolist() for rgb in average_mcu],
-                'kelvin': self.kelvin,
-            }}
-        )
-
     def loop(self):
         image = ImageGrab.grab()
         pixel_data = {cutout: self.process_image(image, cutout) for cutout in self.used_cutouts}
@@ -87,7 +73,21 @@ class ScreenFX:
             threading.Thread(
                 target=self.sock.sendto,
                 args=(
-                    bytes(self.nodemcu_draw(pixel_data, leds, cutout, flip), 'utf-8'), (ip, port)
+                    bytes(self.prepare_data(pixel_data, leds, cutout, flip), 'utf-8'), (ip, port)
                 ),
                 kwargs={}
             ).start()
+
+    def prepare_data(self, pixel_data, leds, cutout, flip):
+        average = pixel_data.get(cutout)
+        average_mcu = np.array_split(average, leds, axis=0)
+
+        if flip:
+            average_mcu = np.flip(average_mcu)
+
+        return json.dumps(
+            {'streamline': {
+                'led_list': [rgb.mean(axis=0).astype(int).tolist() for rgb in average_mcu],
+                'kelvin': self.kelvin,
+            }}
+        )
