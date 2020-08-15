@@ -1,69 +1,74 @@
 import json
+import math
 import threading
 import numpy as np
 
 from pulseviz import bands
 
-fixture = {
-    'source_name': 'alsa_output.pci-0000_00_1b.0.analog-stereo.monitor',
-    'sample_frequency': 44100,
-    'sample_size': 8192,
-    'window_size': 1024,
-    'window_overlap': 0.5,
-    'window_function': 'hanning',
-    'weighting': 'Z',
-    'band_frequencies': bands.calculate_octave_bands(fraction=3)
-}
 
-steps = 33
+class PulseViz:
 
-band_mapping = {
-    step: [
-        (255 / steps) * (steps - step),
-        0,
-        (255 / steps) * step,
-    ]
-    for step in range(steps)
-}
+    def __init__(self, sock, nodemcus, steps, source_name):
+        self.sock = sock
+        self.nodemcus = nodemcus
 
-band = bands.Bands(**fixture)
-band.start()
+        self.band_mapping = {
+            step: [
+                np.clip(255 * math.cos(3.1415926535 / steps * step), 0, 255),
+                255 * math.sin(3.1415926535 / steps * step),
+                np.clip(255 * math.cos(3.1415926535 / steps * step) * -1, 0, 255),
+                ]
+            for step in range(steps)
+        }
 
+        bands_data = {
+            'source_name': source_name,
+            'sample_frequency': 44100,
+            'sample_size': 8192,
+            'window_size': 1024,
+            'window_overlap': 0.5,
+            'window_function': 'hanning',
+            'weighting': 'Z',
+            'band_frequencies': bands.calculate_octave_bands(fraction=3)
+        }
 
-def draw(color):
-    return json.dumps(
-        {'single_color': {
-            'input_color': color,
-            'kelvin': 3600,
-        }}
-    )
+        self.pulseviz_bands = bands.Bands(**bands_data)
 
+    def start_bands(self):
+        self.pulseviz_bands.start()
 
-def draw_bands(sock, nodemcus):
+    def stop_bands(self):
+        self.pulseviz_bands.stop()
 
+    def loop(self):
+        flipped_min = self.pulseviz_bands.values.min() * -1
 
-    flipped_min = band.values.min() * -1
+        converted_values = [
+            [((value + flipped_min) / flipped_min) * color for color in self.band_mapping.get(num)]
+            for num, value in enumerate(self.pulseviz_bands.values)
+        ]
 
-    converted_values = [
-        [((value + flipped_min) / flipped_min) * color for color in band_mapping.get(num)]
-        for num, value in enumerate(band.values)
-    ]
+        converted_color = np.clip(np.amax(converted_values, axis=0).astype(int), 0, 255).tolist()
 
-    converted_color = np.clip(np.amax(converted_values, axis=0).astype(int), 0, 255).tolist()
+        # color_value = np.mean(converted_values, axis=0)
 
-    # color_value = np.mean(converted_values, axis=0)
+        for nodemcu in self.nodemcus:
+            ip = nodemcu.get('ip')
+            port = nodemcu.get('port')
 
-    for nodemcu in nodemcus:
-        ip = nodemcu.get('ip')
-        port = nodemcu.get('port')
-        leds = nodemcu.get('leds')
-        cutout = nodemcu.get('cutout')
-        flip = nodemcu.get('flip')
+            threading.Thread(
+                target=self.sock.sendto,
+                args=(
+                    bytes(self.draw(converted_color), 'utf-8'), (ip, port)
+                ),
+                kwargs={}
+            ).start()
 
-        threading.Thread(
-            target=sock.sendto,
-            args=(
-                bytes(draw(converted_color), 'utf-8'), (ip, port)
-            ),
-            kwargs={}
-        ).start()
+    @staticmethod
+    def draw(color):
+        return json.dumps(
+            {'single_color': {
+                'input_color': color,
+                'kelvin': 3600,
+            }}
+        )
