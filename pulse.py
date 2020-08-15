@@ -17,7 +17,7 @@ class PulseViz:
                 np.clip(255 * math.cos(3.1415926535 / steps * step), 0, 255),
                 255 * math.sin(3.1415926535 / steps * step),
                 np.clip(255 * math.cos(3.1415926535 / steps * step) * -1, 0, 255),
-                ]
+            ]
             for step in range(steps)
         }
 
@@ -41,16 +41,27 @@ class PulseViz:
         self.pulseviz_bands.stop()
 
     def loop(self):
-        flipped_min = self.pulseviz_bands.values.min() * -1
+        values = self.pulseviz_bands.values
+        flipped_min = values.min() * -1
 
         converted_values = [
             [((value + flipped_min) / flipped_min) * color for color in self.band_mapping.get(num)]
-            for num, value in enumerate(self.pulseviz_bands.values)
+            for num, value in enumerate(values)
         ]
 
-        converted_color = np.clip(np.amax(converted_values, axis=0).astype(int), 0, 255).tolist()
+        converted_color = np.clip(np.amax(converted_values, axis=0), 0, 255)
 
-        # color_value = np.mean(converted_values, axis=0)
+        if np.isinf(values.max()):
+            max_color = [0, 0, 0]
+        else:
+            max_color = self.band_mapping.get(np.argmax(values))
+
+        output_color = ((np.array(converted_color) + np.array(max_color)) / 2.0)
+
+        if np.isnan(output_color.max()):
+            output_color = [0, 0, 0]
+        else:
+            output_color = output_color.astype(int).tolist()
 
         for nodemcu in self.nodemcus:
             ip = nodemcu.get('ip')
@@ -59,7 +70,7 @@ class PulseViz:
             threading.Thread(
                 target=self.sock.sendto,
                 args=(
-                    bytes(self.draw(converted_color), 'utf-8'), (ip, port)
+                    bytes(self.draw(output_color), 'utf-8'), (ip, port)
                 ),
                 kwargs={}
             ).start()
