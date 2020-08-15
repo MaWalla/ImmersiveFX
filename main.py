@@ -1,11 +1,9 @@
 import json
 import socket
-import threading
 from time import sleep, time
-from screeninfo import get_monitors
 
-from PIL import ImageGrab
-import numpy as np
+from pulse import PulseViz
+from screenfx import ScreenFX
 
 try:
     with open('config.json') as file:
@@ -14,6 +12,12 @@ except FileNotFoundError:
     print('config file not found. you need to place config.json into the main.py directory.')
     print('There is a config.json.example to use as starting point.')
     exit()
+
+
+# string, decides what to display. screenfx should be cross platform while pulseviz is linux only
+valid_fxmodes = ['screenfx', 'pulseviz']
+fxmode = config.get('fxmode') if config.get('fxmode') in valid_fxmodes else 'screenfx'
+
 
 # integer value, sets the fps. 0 for not setting it means unlimited fps
 # reducing this value reduces strain on cpu
@@ -38,6 +42,11 @@ razer_enabled = config.get('razer')
 # can be 'low', 'medium' or 'high'. High puts the most load on the CPU,
 # but offers more detail. This setting can also be subject to personal preference.
 preset = config.get('preset') or 'medium'
+
+
+# string, pulseaudio sink name for capturing audio data
+# options can be obtained with pactl list sources | grep 'Name:'
+source_name = config.get('source_name')
 
 
 # Takes a list of dicts(objects). Each one needs the following keys:
@@ -66,10 +75,6 @@ if not razer_enabled and not nodemcus:
     print('No devices. Either set |"razer": true| in the config or define at least one NodeMCU')
     exit()
 
-if razer_enabled:
-    from razer import chroma_init, chroma_draw
-    device, rows, cols = chroma_init()
-
 
 def process_nodemcu_config():
     """
@@ -96,93 +101,30 @@ def process_nodemcu_config():
 
 process_nodemcu_config()
 
-
-monitor = get_monitors()[0]  # for now, just take the first one's boundaries
-w = monitor.width   # shortcuts
-h = monitor.height  # more shortcuts yay
-
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
 
+if fxmode == 'screenfx':
+    fx = ScreenFX(sock, kelvin, razer_enabled, nodemcus, used_cutouts, preset)
 
-cutout_presets = {
-    'low': {
-        'left': (0, 0, w - w * 0.92, h),
-        'right': (w * 0.92, 0, w, h),
-        'bottom': (0, h - h * 0.11, w, h),
-    },
-    'medium': {
-        'left': (0, 0, w - w * 0.86, h),
-        'right': (w * 0.86, 0, w, h),
-        'bottom': (0, h - h * 0.22, w, h),
-    },
-    'high': {
-        'left': (0, 0, w - w * 0.8, h),
-        'right': (w * 0.8, 0, w, h),
-        'bottom': (0, h - h * 0.33, w, h),
-    },
-}
+elif fxmode == 'pulseviz':
+    fx = PulseViz(sock, nodemcus, kelvin, 33, source_name)
+    fx.start_bands()
+else:
+    print('No valid fxmode set, please pick screenfx or pulseviz')
+    exit()
 
-
-cutouts = {**cutout_presets.get(preset)}
-
-
-def process_image(image, cutout):
-    if cutout in ['left', 'right']:
-        axis = 1
-    else:
-        axis = 0
-
-    crop = image.crop(cutouts.get(cutout))
-    cv_area = np.array(crop)
-    average = cv_area.mean(axis=axis)
-    return average
-
-
-def nodemcu_draw(pixel_data, leds, cutout, flip):
-    average = pixel_data.get(cutout)
-    average_mcu = np.array_split(average, leds, axis=0)
-
-    if flip:
-        average_mcu = np.flip(average_mcu)
-
-    return json.dumps(
-        {'streamline': {
-            'led_list': [rgb.mean(axis=0).astype(int).tolist() for rgb in average_mcu],
-            'kelvin': kelvin,
-        }}
-    )
-
-
-def imageloop():
-    image = ImageGrab.grab()
-    pixel_data = {cutout: process_image(image, cutout) for cutout in used_cutouts}
-
-    if razer_enabled:
-        average_razer = np.array_split(pixel_data.get('center'), cols, axis=0)
-        chroma_draw(average_razer, device, rows, cols)
-
-    for nodemcu in nodemcus:
-        ip = nodemcu.get('ip')
-        port = nodemcu.get('port')
-        leds = nodemcu.get('leds')
-        cutout = nodemcu.get('cutout')
-        flip = nodemcu.get('flip')
-
-        threading.Thread(
-            target=sock.sendto,
-            args=(
-                bytes(nodemcu_draw(pixel_data, leds, cutout, flip), 'utf-8'), (ip, port)
-            ),
-            kwargs={}
-        ).start()
-
-
-print('----------------------------------')
-print('Welcome to ImmersiveFX')
-print('You got Razer support %s ' % ('enabled.' if razer_enabled else 'disabled.'))
+print('Welcome to ----------------------------------------')
+print('███ █   █ █   █ ███ ██   ██ ███ █   █ ███ ███ ██ ██')
+print(' █  ██ ██ ██ ██ █   █ █ █    █  █   █ █   █    █ █ ')
+print(' █  █ █ █ █ █ █ ██  ██   █   █  ██ ██ ██  ██    █  ')
+print(' █  █   █ █   █ █   █ █   █  █   ███  █   █    █ █ ')
+print('███ █   █ █   █ ███ █ █ ██  ███   █   ███ █   ██ ██')
+print('---------------------------------------------------')
+print('For visualisation, you\'ve picked: %s.' % fxmode)
+print('You %s Razer support.' % ('enabled' if razer_enabled else 'disabled'))
 print('There are %s NodeMCUs configured.' % len(nodemcus))
 print('The FPS are set to %s.' % (fps if fps else 'unlimited'))
-print('----------------------------------')
+print('---------------------------------------------------')
 
 
 def timed(method):
@@ -196,7 +138,7 @@ while True:
     if fps:
         sleep(1 / fps)
 
-    if benchmark:
-        timed(imageloop)
-    else:
-        imageloop()
+        if benchmark:
+            timed(fx.loop)
+        else:
+            fx.loop()
