@@ -119,7 +119,7 @@ print(' █  ██ ██ ██ ██ █   █ █ █    █  █   █ █
 print(' █  █ █ █ █ █ █ ██  ██   █   █  ██ ██ ██  ██    █  ')
 print(' █  █   █ █   █ █   █ █   █  █   ███  █   █    █ █ ')
 print('███ █   █ █   █ ███ █ █ ██  ███   █   ███ █   ██ ██')
-print('---------------------------------------------------')
+print('-----------------------------------------by MaWalla')
 print('For visualisation, you\'ve picked: %s.' % fxmode)
 print('You %s Razer support.' % ('enabled' if razer_enabled else 'disabled'))
 print('There are %s NodeMCUs configured.' % len(nodemcus))
