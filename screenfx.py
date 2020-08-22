@@ -15,6 +15,7 @@ class ScreenFX:
         self.razer_enabled = razer_enabled
         self.ds4_enabled = ds4_enabled
         self.ds4_paths = ds4_paths
+        self.last_ds4_color = ''
         self.nodemcus = nodemcus
         self.used_cutouts = used_cutouts
 
@@ -72,13 +73,18 @@ class ScreenFX:
         if self.ds4_enabled:
             lightbar_color = '%02x%02x%02x' % tuple(np.mean(pixel_data.get('center'), axis=0).astype(int).tolist())
 
-            for controller in self.ds4_paths:
-                command = f'/opt/ds4led {controller} {lightbar_color}'
-                threading.Thread(
-                    target=os.system,
-                    args=[command],
-                    kwargs={}
-                ).start()
+            if lightbar_color == self.last_ds4_color:
+                pass
+            else:
+                for controller in self.ds4_paths:
+                    command = f'/opt/ds4led {controller} {lightbar_color}'
+                    threading.Thread(
+                        target=os.system,
+                        args=[command],
+                        kwargs={}
+                    ).start()
+
+            self.last_ds4_color = lightbar_color
 
         for nodemcu in self.nodemcus:
             ip = nodemcu.get('ip')
