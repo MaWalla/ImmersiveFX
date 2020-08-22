@@ -1,5 +1,6 @@
 import json
 import socket
+import glob
 from time import sleep, time
 
 from pulse import PulseViz
@@ -38,6 +39,14 @@ kelvin = config.get('kelvin')
 razer_enabled = config.get('razer')
 
 
+# enables or disables support for ds4 controllers. Linux only.
+# copy ds4led and ds4perm to /opt/ and make both executable.
+# also copy 10-local.rules to /etc/udev/rules.d/ and run
+# finally run sudo udevadm control --reload-rules && sudo udevadm trigger
+# or reboot
+ds4_enabled = config.get('ds4')
+
+
 # string, defines the cutout size from the screen border towards the inside
 # can be 'low', 'medium' or 'high'. High puts the most load on the CPU,
 # but offers more detail. This setting can also be subject to personal preference.
@@ -62,7 +71,12 @@ nodemcus = config.get('nodemcus')
 
 # This list gets populated during processing the nodemcu config.
 # if Razer is in use, it gets prepopulated with bottom.
-used_cutouts = ['bottom'] if razer_enabled else []
+# DualShock 4 prepopulates it with center
+used_cutouts = []
+if razer_enabled:
+    used_cutouts += ['bottom']
+if ds4_enabled:
+    used_cutouts += ['center']
 
 
 if fps and fps < 0:
@@ -71,8 +85,8 @@ if fps and fps < 0:
     exit()
 
 
-if not razer_enabled and not nodemcus:
-    print('No devices. Either set |"razer": true| in the config or define at least one NodeMCU')
+if not razer_enabled and not ds4_enabled and not nodemcus:
+    print('No devices. Either set |"razer": true| or |"ds4": true| in the config or define at least one NodeMCU')
     exit()
 
 
@@ -101,10 +115,16 @@ def process_nodemcu_config():
 
 process_nodemcu_config()
 
+if ds4_enabled:
+    ds4_paths = [path for path in glob.glob('/sys/class/leds/0005:054C:05C4.*:global')]
+else:
+    ds4_paths = []
+
+
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
 
 if fxmode == 'screenfx':
-    fx = ScreenFX(sock, kelvin, razer_enabled, nodemcus, used_cutouts, preset)
+    fx = ScreenFX(sock, kelvin, razer_enabled, ds4_enabled, ds4_paths, nodemcus, used_cutouts, preset)
 
 elif fxmode == 'pulseviz':
     fx = PulseViz(sock, nodemcus, kelvin, 33, source_name)
@@ -122,6 +142,7 @@ print('███ █   █ █   █ ███ █ █ ██  ███   █  
 print('-----------------------------------------by MaWalla')
 print('For visualisation, you\'ve picked: %s.' % fxmode)
 print('You %s Razer support.' % ('enabled' if razer_enabled else 'disabled'))
+print('You %s DualShock 4 support.' % ('enabled' if ds4_enabled else 'disabled'))
 print('There are %s NodeMCUs configured.' % len(nodemcus))
 print('The FPS are set to %s.' % (fps if fps else 'unlimited'))
 print('---------------------------------------------------')

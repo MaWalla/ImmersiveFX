@@ -1,3 +1,4 @@
+import os
 import json
 import threading
 import numpy as np
@@ -8,10 +9,12 @@ from screeninfo import get_monitors
 
 class ScreenFX:
 
-    def __init__(self, sock, kelvin, razer_enabled, nodemcus, used_cutouts, preset):
+    def __init__(self, sock, kelvin, razer_enabled, ds4_enabled, ds4_paths, nodemcus, used_cutouts, preset):
         self.sock = sock
         self.kelvin = kelvin
         self.razer_enabled = razer_enabled
+        self.ds4_enabled = ds4_enabled
+        self.ds4_paths = ds4_paths
         self.nodemcus = nodemcus
         self.used_cutouts = used_cutouts
 
@@ -42,7 +45,10 @@ class ScreenFX:
             },
         }
 
-        self.cutouts = {**cutout_presets.get(preset)}
+        self.cutouts = {
+            'center': (w/2 - 32, h/2 - 32, w/2 + 32, h/2 + 32),
+            **cutout_presets.get(preset)
+        }
 
     def process_image(self, image, cutout):
         if cutout in ['left', 'right']:
@@ -60,8 +66,19 @@ class ScreenFX:
         pixel_data = {cutout: self.process_image(image, cutout) for cutout in self.used_cutouts}
 
         if self.razer_enabled:
-            average_razer = np.array_split(pixel_data.get('center'), self.cols, axis=0)
+            average_razer = np.array_split(pixel_data.get('bottom'), self.cols, axis=0)
             self.chroma_draw(average_razer, self.device, self.rows, self.cols)
+
+        if self.ds4_enabled:
+            lightbar_color = '%02x%02x%02x' % tuple(np.mean(pixel_data.get('center'), axis=0).astype(int).tolist())
+
+            for controller in self.ds4_paths:
+                command = f'/opt/ds4led {controller} {lightbar_color}'
+                threading.Thread(
+                    target=os.system,
+                    args=[command],
+                    kwargs={}
+                ).start()
 
         for nodemcu in self.nodemcus:
             ip = nodemcu.get('ip')
