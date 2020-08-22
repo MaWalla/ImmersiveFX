@@ -15,7 +15,6 @@ class ScreenFX:
         self.razer_enabled = razer_enabled
         self.ds4_enabled = ds4_enabled
         self.ds4_paths = ds4_paths
-        self.last_ds4_color = ''
         self.nodemcus = nodemcus
         self.used_cutouts = used_cutouts
 
@@ -70,21 +69,15 @@ class ScreenFX:
             average_razer = np.array_split(pixel_data.get('bottom'), self.cols, axis=0)
             self.chroma_draw(average_razer, self.device, self.rows, self.cols)
 
-        if self.ds4_enabled:
-            lightbar_color = '%02x%02x%02x' % tuple(np.mean(pixel_data.get('center'), axis=0).astype(int).tolist())
-
-            if lightbar_color == self.last_ds4_color:
-                pass
-            else:
-                for controller in self.ds4_paths:
-                    command = f'/opt/ds4led {controller} {lightbar_color}'
-                    threading.Thread(
-                        target=os.system,
-                        args=[command],
-                        kwargs={}
-                    ).start()
-
-            self.last_ds4_color = lightbar_color
+        if self.ds4_enabled and self.ds4_paths:
+            threading.Thread(
+                target=self.set_ds4_color,
+                args=[],
+                kwargs={
+                    'ds4_paths': self.ds4_paths,
+                    'pixel_data': pixel_data,
+                },
+            ).start()
 
         for nodemcu in self.nodemcus:
             ip = nodemcu.get('ip')
@@ -98,8 +91,30 @@ class ScreenFX:
                 args=(
                     bytes(self.prepare_data(pixel_data, leds, cutout, flip), 'utf-8'), (ip, port)
                 ),
-                kwargs={}
+                kwargs={},
             ).start()
+
+    @staticmethod
+    def set_ds4_color(ds4_paths, pixel_data):
+        lightbar_color = np.mean(pixel_data.get('center'), axis=0).astype(int).tolist()
+        red, green, blue = lightbar_color
+
+        for controller in ds4_paths:
+            red_path = f'{controller[:-6]}red/brightness'
+            green_path = f'{controller[:-6]}green/brightness'
+            blue_path = f'{controller[:-6]}blue/brightness'
+
+            r = open(red_path, 'w')
+            r.write(str(red))
+            r.close()
+
+            g = open(green_path, 'w')
+            g.write(str(green))
+            g.close()
+
+            b = open(blue_path, 'w')
+            b.write(str(blue))
+            b.close()
 
     def prepare_data(self, pixel_data, leds, cutout, flip):
         average = pixel_data.get(cutout)

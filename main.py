@@ -40,7 +40,7 @@ razer_enabled = config.get('razer')
 
 
 # enables or disables support for ds4 controllers. Linux only.
-# copy ds4led and ds4perm to /opt/ and make both executable.
+# copy and ds4perm to /opt/ and make it executable.
 # also copy 10-local.rules to /etc/udev/rules.d/ and run
 # finally run sudo udevadm control --reload-rules && sudo udevadm trigger
 # or reboot
