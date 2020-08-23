@@ -8,10 +8,12 @@ from pulseviz import bands
 
 class PulseViz:
 
-    def __init__(self, sock, nodemcus, kelvin, steps, source_name):
+    def __init__(self, sock, nodemcus, ds4_enabled, ds4_paths, kelvin, source_name):
         self.sock = sock
         self.nodemcus = nodemcus
         self.kelvin = kelvin
+        self.ds4_enabled = ds4_enabled
+        self.ds4_paths = ds4_paths
 
         self.band_mapping = {
             0: [255, 0, 0],
@@ -99,6 +101,26 @@ class PulseViz:
         normalized_color = np.clip([
             self.post_process_color(rgb, color) for rgb in color
         ], 0, 255).astype(int).tolist()
+
+        if self.ds4_enabled and self.ds4_paths:
+            red, green, blue = normalized_color
+
+            for controller in self.ds4_paths:
+                red_path = f'{controller[:-6]}red/brightness'
+                green_path = f'{controller[:-6]}green/brightness'
+                blue_path = f'{controller[:-6]}blue/brightness'
+
+                r = open(red_path, 'w')
+                r.write(str(red))
+                r.close()
+
+                g = open(green_path, 'w')
+                g.write(str(green))
+                g.close()
+
+                b = open(blue_path, 'w')
+                b.write(str(blue))
+                b.close()
 
         for nodemcu in self.nodemcus:
             ip = nodemcu.get('ip')
