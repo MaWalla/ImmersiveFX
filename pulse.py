@@ -118,9 +118,8 @@ class PulseViz(Common):
             ).start()
 
     def prepare_data(self, color):
-        return json.dumps(
-            {'single_color': {
-                'input_color': color,
-                'kelvin': self.kelvin,
-            }}
-        )
+        return json.dumps({
+            'mode': 'single_color',
+            'input_color': color,
+            'kelvin': self.kelvin,
+        })
