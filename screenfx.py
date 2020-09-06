@@ -94,14 +94,21 @@ class ScreenFX(Common):
             average = np.flip(average)
         average = np.array_split(average, sections)
 
-        for section in range(sections):
-            self.sock.sendto(bytes(self.nodemcu_data(average[section], section, sections), 'utf-8'), (ip, port))
+        offset = 0
 
-    def nodemcu_data(self, average, section, sections):
+        for section in range(sections):
+            average_section = average[section]
+            current_section_length = len(average_section)
+            self.sock.sendto(
+                bytes(self.nodemcu_data(average_section, offset, current_section_length), 'utf-8'), (ip, port)
+            )
+            offset += current_section_length
+
+    def nodemcu_data(self, average, offset, current_length):
         return json.dumps({
             'mode': 'streamline',
-            'section': section,
-            'sections': sections,
+            'offset': offset,
+            'current_length': current_length,
             'led_list': [rgb.mean(axis=0).astype(int).tolist() for rgb in average],
             'kelvin': self.kelvin,
         })
