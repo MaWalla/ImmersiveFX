@@ -1,5 +1,7 @@
 import json
 import threading
+from time import time
+
 import numpy as np
 
 from PIL import ImageGrab
@@ -70,30 +72,36 @@ class ScreenFX(Common):
             ).start()
 
         for nodemcu in self.nodemcus:
-            ip = nodemcu['ip']
-            port = nodemcu['port']
-            leds = nodemcu['leds']
-            cutout = nodemcu['cutout']
-            flip = nodemcu['flip']
-
             threading.Thread(
-                target=self.sock.sendto,
-                args=(
-                    bytes(self.prepare_data(pixel_data, leds, cutout, flip), 'utf-8'), (ip, port)
-                ),
-                kwargs={},
+                target=self.nodemcu_colors,
+                args=(),
+                kwargs={
+                    'nodemcu': nodemcu,
+                    'pixel_data': pixel_data,
+                },
             ).start()
 
-    def prepare_data(self, pixel_data, leds, cutout, flip):
-        average = pixel_data[cutout]
-        average_mcu = np.array_split(average, leds, axis=0)
+    def nodemcu_colors(self, nodemcu, pixel_data):
+        ip = nodemcu['ip']
+        port = nodemcu['port']
+        leds = nodemcu['leds']
+        cutout = nodemcu['cutout']
+        flip = nodemcu['flip']
+        sections = nodemcu['sections']
 
+        average = np.array_split(pixel_data[cutout], leds, axis=0)
         if flip:
-            average_mcu = np.flip(average_mcu)
+            average = np.flip(average)
+        average = np.array_split(average, sections)
 
-        return json.dumps(
-            {'streamline': {
-                'led_list': [rgb.mean(axis=0).astype(int).tolist() for rgb in average_mcu],
-                'kelvin': self.kelvin,
-            }}
-        )
+        for section in range(sections):
+            self.sock.sendto(bytes(self.nodemcu_data(average[section], section, sections), 'utf-8'), (ip, port))
+
+    def nodemcu_data(self, average, section, sections):
+        return json.dumps({
+            'mode': 'streamline',
+            'section': section,
+            'sections': sections,
+            'led_list': [rgb.mean(axis=0).astype(int).tolist() for rgb in average],
+            'kelvin': self.kelvin,
+        })

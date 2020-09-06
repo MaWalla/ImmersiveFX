@@ -64,8 +64,10 @@ source_name = config.get('source_name')
 # port: integer UDP port the nodemcu listens on
 # leds: integer amount of leds connected to it
 # flip: boolean, switches beginning and end to fit your need and setup
+# section_split: (optional) amount of requests with data chunks, defaults to 1
+# (required for large amounts of leds (> 60) due to request size limit)
 # cutout: string which part of the screen to use for the color display
-# can be: left, right or bottom
+# can be: left, right, center or bottom
 nodemcus = config.get('nodemcus')
 
 
@@ -104,6 +106,7 @@ def process_nodemcu_config():
         leds = nodemcu.get('leds')
         cutout = nodemcu.get('cutout')
         flip = nodemcu.get('flip')
+        nodemcu['sections'] = nodemcu.get('sections', 1)
 
         if not id or not ip or not port or not leds or cutout not in ['left', 'right', 'bottom'] or flip is None:
             print('One or more NodeMCU configs are incomplete. Please fix the file and retry')
