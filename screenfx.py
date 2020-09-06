@@ -1,4 +1,3 @@
-import os
 import json
 import threading
 import numpy as np
@@ -6,22 +5,14 @@ import numpy as np
 from PIL import ImageGrab
 from screeninfo import get_monitors
 
+from common import Common
 
-class ScreenFX:
 
-    def __init__(self, sock, kelvin, razer_enabled, ds4_enabled, ds4_paths, nodemcus, used_cutouts, preset):
-        self.sock = sock
-        self.kelvin = kelvin
-        self.razer_enabled = razer_enabled
-        self.ds4_enabled = ds4_enabled
-        self.ds4_paths = ds4_paths
-        self.nodemcus = nodemcus
+class ScreenFX(Common):
+
+    def __init__(self, used_cutouts, preset, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.used_cutouts = used_cutouts
-
-        if razer_enabled:
-            from razer import chroma_init, chroma_draw
-            self.device, self.rows, self.cols = chroma_init()
-            self.chroma_draw = chroma_draw
 
         monitor = get_monitors()[0]  # for now, just take the first one's boundaries
         w = monitor.width   # shortcuts
@@ -74,8 +65,7 @@ class ScreenFX:
                 target=self.set_ds4_color,
                 args=[],
                 kwargs={
-                    'ds4_paths': self.ds4_paths,
-                    'pixel_data': pixel_data,
+                    'lightbar_color': np.mean(pixel_data.get('center'), axis=0).astype(int).tolist(),
                 },
             ).start()
 
@@ -93,28 +83,6 @@ class ScreenFX:
                 ),
                 kwargs={},
             ).start()
-
-    @staticmethod
-    def set_ds4_color(ds4_paths, pixel_data):
-        lightbar_color = np.mean(pixel_data.get('center'), axis=0).astype(int).tolist()
-        red, green, blue = lightbar_color
-
-        for controller in ds4_paths:
-            red_path = f'{controller[:-6]}red/brightness'
-            green_path = f'{controller[:-6]}green/brightness'
-            blue_path = f'{controller[:-6]}blue/brightness'
-
-            r = open(red_path, 'w')
-            r.write(str(red))
-            r.close()
-
-            g = open(green_path, 'w')
-            g.write(str(green))
-            g.close()
-
-            b = open(blue_path, 'w')
-            b.write(str(blue))
-            b.close()
 
     def prepare_data(self, pixel_data, leds, cutout, flip):
         average = pixel_data.get(cutout)

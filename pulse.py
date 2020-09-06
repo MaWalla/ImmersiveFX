@@ -1,19 +1,15 @@
 import json
-import math
 import threading
 import numpy as np
 
+from common import Common
 from pulseviz import bands
 
 
-class PulseViz:
+class PulseViz(Common):
 
-    def __init__(self, sock, nodemcus, ds4_enabled, ds4_paths, kelvin, source_name):
-        self.sock = sock
-        self.nodemcus = nodemcus
-        self.kelvin = kelvin
-        self.ds4_enabled = ds4_enabled
-        self.ds4_paths = ds4_paths
+    def __init__(self, source_name, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self.band_mapping = {
             0: [255, 0, 0],
@@ -52,8 +48,6 @@ class PulseViz:
             33: [0, 0, 255],
 
         }
-
-
 
         bands_data = {
             'source_name': source_name,
@@ -103,24 +97,13 @@ class PulseViz:
         ], 0, 255).astype(int).tolist()
 
         if self.ds4_enabled and self.ds4_paths:
-            red, green, blue = normalized_color
-
-            for controller in self.ds4_paths:
-                red_path = f'{controller[:-6]}red/brightness'
-                green_path = f'{controller[:-6]}green/brightness'
-                blue_path = f'{controller[:-6]}blue/brightness'
-
-                r = open(red_path, 'w')
-                r.write(str(red))
-                r.close()
-
-                g = open(green_path, 'w')
-                g.write(str(green))
-                g.close()
-
-                b = open(blue_path, 'w')
-                b.write(str(blue))
-                b.close()
+            threading.Thread(
+                target=self.set_ds4_color,
+                args=[],
+                kwargs={
+                    'lightbar_color': normalized_color,
+                },
+            ).start()
 
         for nodemcu in self.nodemcus:
             ip = nodemcu.get('ip')

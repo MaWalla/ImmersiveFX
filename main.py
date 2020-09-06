@@ -124,10 +124,27 @@ else:
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
 
 if fxmode == 'screenfx':
-    fx = ScreenFX(sock, kelvin, razer_enabled, ds4_enabled, ds4_paths, nodemcus, used_cutouts, preset)
+    fx = ScreenFX(
+        sock=sock,
+        kelvin=kelvin,
+        razer_enabled=razer_enabled,
+        ds4_enabled=ds4_enabled,
+        ds4_paths=ds4_paths,
+        nodemcus=nodemcus,
+        used_cutouts=used_cutouts,
+        preset=preset,
+    )
 
 elif fxmode == 'pulseviz':
-    fx = PulseViz(sock, nodemcus, ds4_enabled, ds4_paths, kelvin, source_name)
+    fx = PulseViz(
+        sock=sock,
+        kelvin=kelvin,
+        razer_enabled=razer_enabled,
+        ds4_enabled=ds4_enabled,
+        ds4_paths=ds4_paths,
+        nodemcus=nodemcus,
+        source_name=source_name,
+    )
     fx.start_bands()
 else:
     print('No valid fxmode set, please pick screenfx or pulseviz')
