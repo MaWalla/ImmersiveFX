@@ -87,7 +87,7 @@ class PulseViz(Common):
 
         converted_values = [[
                 self.data_conversion(value, values.min(), values.max()) * color if not np.isinf(value) else 0
-                for color in self.band_mapping.get(num)
+                for color in self.band_mapping[num]
             ] for num, value in enumerate(values)
         ]
 
@@ -106,8 +106,8 @@ class PulseViz(Common):
             ).start()
 
         for nodemcu in self.nodemcus:
-            ip = nodemcu.get('ip')
-            port = nodemcu.get('port')
+            ip = nodemcu['ip']
+            port = nodemcu['port']
 
             threading.Thread(
                 target=self.sock.sendto,

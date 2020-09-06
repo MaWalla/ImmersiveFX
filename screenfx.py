@@ -38,7 +38,7 @@ class ScreenFX(Common):
 
         self.cutouts = {
             'center': (w/2 - 32, h/2 - 32, w/2 + 32, h/2 + 32),
-            **cutout_presets.get(preset)
+            **cutout_presets[preset]
         }
 
     def process_image(self, image, cutout):
@@ -47,7 +47,7 @@ class ScreenFX(Common):
         else:
             axis = 0
 
-        crop = image.crop(self.cutouts.get(cutout))
+        crop = image.crop(self.cutouts[cutout])
         cv_area = np.array(crop)
         average = cv_area.mean(axis=axis)
         return average
@@ -57,7 +57,7 @@ class ScreenFX(Common):
         pixel_data = {cutout: self.process_image(image, cutout) for cutout in self.used_cutouts}
 
         if self.razer_enabled:
-            average_razer = np.array_split(pixel_data.get('bottom'), self.cols, axis=0)
+            average_razer = np.array_split(pixel_data['bottom'], self.cols, axis=0)
             self.chroma_draw(average_razer, self.device, self.rows, self.cols)
 
         if self.ds4_enabled and self.ds4_paths:
@@ -65,16 +65,16 @@ class ScreenFX(Common):
                 target=self.set_ds4_color,
                 args=[],
                 kwargs={
-                    'lightbar_color': np.mean(pixel_data.get('center'), axis=0).astype(int).tolist(),
+                    'lightbar_color': np.mean(pixel_data['center'], axis=0).astype(int).tolist(),
                 },
             ).start()
 
         for nodemcu in self.nodemcus:
-            ip = nodemcu.get('ip')
-            port = nodemcu.get('port')
-            leds = nodemcu.get('leds')
-            cutout = nodemcu.get('cutout')
-            flip = nodemcu.get('flip')
+            ip = nodemcu['ip']
+            port = nodemcu['port']
+            leds = nodemcu['leds']
+            cutout = nodemcu['cutout']
+            flip = nodemcu['flip']
 
             threading.Thread(
                 target=self.sock.sendto,
@@ -85,7 +85,7 @@ class ScreenFX(Common):
             ).start()
 
     def prepare_data(self, pixel_data, leds, cutout, flip):
-        average = pixel_data.get(cutout)
+        average = pixel_data[cutout]
         average_mcu = np.array_split(average, leds, axis=0)
 
         if flip:
