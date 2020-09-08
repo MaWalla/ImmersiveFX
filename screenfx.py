@@ -85,6 +85,7 @@ class ScreenFX(Common):
         ip = nodemcu['ip']
         port = nodemcu['port']
         leds = nodemcu['leds']
+        brightness = nodemcu['brightness'];
         cutout = nodemcu['cutout']
         flip = nodemcu['flip']
         sections = nodemcu['sections']
@@ -100,15 +101,21 @@ class ScreenFX(Common):
             average_section = average[section]
             current_section_length = len(average_section)
             self.sock.sendto(
-                bytes(self.nodemcu_data(average_section, offset, current_section_length), 'utf-8'), (ip, port)
+                bytes(self.nodemcu_data(
+                    average_section,
+                    brightness,
+                    offset,
+                    current_section_length,
+                ), 'utf-8'), (ip, port)
             )
             offset += current_section_length
 
-    def nodemcu_data(self, average, offset, current_length):
+    def nodemcu_data(self, average, brightness, offset, current_length):
         return json.dumps({
             'mode': 'streamline',
             'offset': offset,
             'current_length': current_length,
             'led_list': [rgb.mean(axis=0).astype(int).tolist() for rgb in average],
+            'brightness': brightness,
             'kelvin': self.kelvin,
         })

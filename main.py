@@ -63,8 +63,9 @@ source_name = config.get('source_name')
 # ip: string ip address of the nodemcu in the network
 # port: integer UDP port the nodemcu listens on
 # leds: integer amount of leds connected to it
+# brightness: (optional) float, defines LED brightness where 0 is off and 1 is full power
 # flip: (optional) boolean, switches beginning and end to fit your need and setup, defaults to false
-# section_split: (optional) amount of requests with data chunks, defaults to 1
+# section_split: (optional) integer amount of requests with data chunks, defaults to 1
 # (required for large amounts of leds (> 60) due to request size limit)
 # cutout: string which part of the screen to use for the color display
 # can be: left, right, center or bottom
