@@ -44,6 +44,7 @@ razer_enabled = config.get('razer')
 # also copy 10-local.rules to /etc/udev/rules.d/ and run
 # finally run sudo udevadm control --reload-rules && sudo udevadm trigger
 # or reboot
+# note: the group users must exist and you must be in it. If not, adjust ds4perm to match your setup
 ds4_enabled = config.get('ds4')
 
 

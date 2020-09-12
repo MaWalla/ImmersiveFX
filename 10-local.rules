@@ -1,0 +1,2 @@
+# Dualshock 4 LED
+ACTION=="add", SUBSYSTEM=="input", ATTRS{name}=="Wireless Controller" RUN+="/opt/ds4perm '%p'"

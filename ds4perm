@@ -1,0 +1,12 @@
+#!/bin/bash
+
+LED=$(echo "$1" | egrep -o '[[:xdigit:]]{4}:[[:xdigit:]]{4}:[[:xdigit:]]{4}\.[[:xdigit:]]{4}')
+
+/bin/chgrp users /sys/class/leds/$LED:red/brightness
+/bin/chmod g+w /sys/class/leds/$LED:red/brightness
+
+/bin/chgrp users /sys/class/leds/$LED:green/brightness
+/bin/chmod g+w /sys/class/leds/$LED:green/brightness
+
+/bin/chgrp users /sys/class/leds/$LED:blue/brightness
+/bin/chmod g+w /sys/class/leds/$LED:blue/brightness
