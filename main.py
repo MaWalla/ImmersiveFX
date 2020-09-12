@@ -108,6 +108,7 @@ def process_nodemcu_config():
         cutout = nodemcu.get('cutout')
         nodemcu['flip'] = nodemcu.get('flip', False)
         nodemcu['sections'] = nodemcu.get('sections', 1)
+        nodemcu['brightness'] = nodemcu.get('brightness', 1)
 
         if not id or not ip or not port or not leds or cutout not in ['left', 'right', 'bottom']:
             print('One or more NodeMCU configs are incomplete. Please fix the file and retry')
