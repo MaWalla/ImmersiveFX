@@ -58,37 +58,51 @@ class ScreenFX(Common):
         image = ImageGrab.grab()
         pixel_data = {cutout: self.process_image(image, cutout) for cutout in self.used_cutouts}
 
-        if self.razer_enabled:
-            average_razer = np.array_split(pixel_data['bottom'], self.cols, axis=0)
-            self.chroma_draw(average_razer, self.device, self.rows, self.cols)
+        for device in self.devices:
+            if device['enabled']:
+                if device['type'] == 'esp':
+                    threading.Thread(
+                        target=self.esp_colors,
+                        args=(),
+                        kwargs={
+                            'esp': device,
+                            'pixel_data': pixel_data,
+                        },
+                    ).start()
 
-        if self.ds4_enabled and self.ds4_paths:
-            threading.Thread(
-                target=self.set_ds4_color,
-                args=[],
-                kwargs={
-                    'lightbar_color': np.mean(pixel_data['center'], axis=0).astype(int).tolist(),
-                },
-            ).start()
+                elif device['type'] == 'ds4':
+                    cutout = device['cutout']
+                    try:
+                        threading.Thread(
+                            target=self.set_ds4_color,
+                            args=[],
+                            kwargs={
+                                'lightbar_color': np.mean(pixel_data[cutout], axis=0).astype(int).tolist(),
+                                'path': self.ds4_paths[device['device_num']]
+                            },
+                        ).start()
+                    except KeyError:
+                        device['enabled'] = False
 
-        for nodemcu in self.nodemcus:
-            threading.Thread(
-                target=self.nodemcu_colors,
-                args=(),
-                kwargs={
-                    'nodemcu': nodemcu,
-                    'pixel_data': pixel_data,
-                },
-            ).start()
+                elif device['type'] == 'razer':
+                    average_razer = np.array_split(pixel_data['bottom'], device['openrazer'].cols, axis=0)
+                    threading.Thread(
+                        target=device['openrazer'].chroma_draw,
+                        args=(),
+                        kwargs={
+                            'data': average_razer
+                        },
+                    ).start()
 
-    def nodemcu_colors(self, nodemcu, pixel_data):
-        ip = nodemcu['ip']
-        port = nodemcu['port']
-        leds = nodemcu['leds']
-        brightness = nodemcu['brightness'];
-        cutout = nodemcu['cutout']
-        flip = nodemcu['flip']
-        sections = nodemcu['sections']
+    def esp_colors(self, esp, pixel_data):
+        ip = esp['ip']
+        port = esp['port']
+        leds = esp['leds']
+        brightness = esp['brightness']
+        cutout = esp['cutout']
+        flip = esp['flip']
+        sections = esp['sections']
+        kelvin = esp['kelvin']
 
         average = np.array_split(pixel_data[cutout], leds, axis=0)
         if flip:
@@ -101,21 +115,22 @@ class ScreenFX(Common):
             average_section = average[section]
             current_section_length = len(average_section)
             self.sock.sendto(
-                bytes(self.nodemcu_data(
+                bytes(self.esp_data(
                     average_section,
                     brightness,
                     offset,
                     current_section_length,
+                    kelvin,
                 ), 'utf-8'), (ip, port)
             )
             offset += current_section_length
 
-    def nodemcu_data(self, average, brightness, offset, current_length):
+    def esp_data(self, average, brightness, offset, current_length, kelvin):
         return json.dumps({
             'mode': 'streamline',
             'offset': offset,
             'current_length': current_length,
             'led_list': [rgb.mean(axis=0).astype(int).tolist() for rgb in average],
             'brightness': brightness,
-            'kelvin': self.kelvin,
+            'kelvin': kelvin,
         })

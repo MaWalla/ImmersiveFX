@@ -96,30 +96,38 @@ class PulseViz(Common):
             self.post_process_color(rgb, color) for rgb in color
         ], 0, 255).astype(int).tolist()
 
-        if self.ds4_enabled and self.ds4_paths:
-            threading.Thread(
-                target=self.set_ds4_color,
-                args=[],
-                kwargs={
-                    'lightbar_color': normalized_color,
-                },
-            ).start()
+        for device in self.devices:
+            if device['enabled']:
+                if device['type'] == 'esp':
+                    ip = device['ip']
+                    port = device['port']
+                    kelvin = device['kelvin']
 
-        for nodemcu in self.nodemcus:
-            ip = nodemcu['ip']
-            port = nodemcu['port']
+                    threading.Thread(
+                        target=self.sock.sendto,
+                        args=(
+                            bytes(self.prepare_data(normalized_color, kelvin), 'utf-8'), (ip, port)
+                        ),
+                        kwargs={}
+                    ).start()
 
-            threading.Thread(
-                target=self.sock.sendto,
-                args=(
-                    bytes(self.prepare_data(normalized_color), 'utf-8'), (ip, port)
-                ),
-                kwargs={}
-            ).start()
+                elif device['type'] == 'ds4':
+                    try:
+                        threading.Thread(
+                            target=self.set_ds4_color,
+                            args=[],
+                            kwargs={
+                                'lightbar_color': normalized_color,
+                                'path': self.ds4_paths[device['device_num']]
+                            },
+                        ).start()
+                    except KeyError:
+                        device['enabled'] = False
 
-    def prepare_data(self, color):
+    @staticmethod
+    def prepare_data(color, kelvin):
         return json.dumps({
             'mode': 'single_color',
             'input_color': color,
-            'kelvin': self.kelvin,
+            'kelvin': kelvin,
         })
