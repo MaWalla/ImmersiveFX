@@ -1,6 +1,5 @@
 import json
 import threading
-from time import time
 
 import numpy as np
 
@@ -8,6 +7,12 @@ from PIL import ImageGrab
 from screeninfo import get_monitors
 
 from common import Common
+
+try:
+    from custom_cutouts import custom_cutouts
+except ModuleNotFoundError:
+    def custom_cutouts(w, h):
+        return {}
 
 
 class ScreenFX(Common):
@@ -25,22 +30,28 @@ class ScreenFX(Common):
                 'left': (0, 0, w - w * 0.92, h),
                 'right': (w * 0.92, 0, w, h),
                 'bottom': (0, h - h * 0.11, w, h),
+                'top': (0, 0, w, h * 0.11),
+                'center': (w/2 - 16, h/2 - 16, w/2 + 16, h/2 + 16),
             },
             'medium': {
                 'left': (0, 0, w - w * 0.86, h),
                 'right': (w * 0.86, 0, w, h),
                 'bottom': (0, h - h * 0.22, w, h),
+                'top': (0, 0, w, h * 0.22),
+                'center': (w/2 - 32, h/2 - 32, w/2 + 32, h/2 + 32),
             },
             'high': {
                 'left': (0, 0, w - w * 0.8, h),
                 'right': (w * 0.8, 0, w, h),
                 'bottom': (0, h - h * 0.33, w, h),
+                'top': (0, 0, w, h * 0.33),
+                'center': (w/2 - 64, h/2 - 64, w/2 + 64, h/2 + 64),
             },
         }
 
         self.cutouts = {
-            'center': (w/2 - 32, h/2 - 32, w/2 + 32, h/2 + 32),
-            **cutout_presets[preset]
+            **cutout_presets[preset],
+            **custom_cutouts(w, h),
         }
 
     def process_image(self, image, cutout):
