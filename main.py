@@ -4,6 +4,7 @@ import glob
 from time import sleep, time
 
 from pulse import PulseViz
+from pulseviz import pacmd
 from razer import Razer
 from screenfx import ScreenFX
 
@@ -18,8 +19,36 @@ except FileNotFoundError:
 
 # string, decides what to display. screenfx should be cross platform while pulseviz is linux only
 valid_fxmodes = ['screenfx', 'pulseviz']
-fxmode = config.get('fxmode') if config.get('fxmode') in valid_fxmodes else 'screenfx'
+fxmode = config.get('fxmode')
 
+if not fxmode:
+    print('No FXMode was found inside your config. No big deal, you can pick it now:\n')
+    for index, mode in enumerate(valid_fxmodes):
+        print(f'{index}: {mode}')
+
+    choice = input()
+
+    try:
+        fxmode = valid_fxmodes[int(choice)]
+    except (IndexError, ValueError):
+        print(f'Invalid choice! It must be a number bigger than 0 and smaller than {len(valid_fxmodes)}, exiting...')
+        exit()
+
+if fxmode == 'pulseviz':
+    sources = pacmd.list_sources()
+    if not config.get('source_name') in sources:
+        print('PulseViz requires an audio source but no source_name was defined ')
+        print('or the source isn\'t available right now. Pick another source please:\n')
+        for index, source in enumerate(sources):
+            print(f'{index}: {source}')
+
+        choice = input()
+
+        try:
+            config['source_name'] = sources[int(choice)]
+        except (IndexError, ValueError):
+            print(f'Invalid choice! It must be a number bigger than 0 and smaller than {len(sources)}, exiting...')
+            exit()
 
 # integer value, sets the fps. reducing this value reduces strain on cpu
 # provides a sane default of 60, which should keep modern CPUs busy :D
