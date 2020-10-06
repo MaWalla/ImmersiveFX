@@ -20,9 +20,9 @@ valid_fxmodes = ['screenfx', 'pulseviz']
 fxmode = config.get('fxmode') if config.get('fxmode') in valid_fxmodes else 'screenfx'
 
 
-# integer value, sets the fps. 0 for not setting it means unlimited fps
-# reducing this value reduces strain on cpu
-fps = config.get('fps')
+# integer value, sets the fps. reducing this value reduces strain on cpu
+# provides a sane default of 60, which should keep modern CPUs busy :D
+fps = config.get('fps', 60)
 
 
 # boolean, decides on whether to run the loop though time measurement or not
@@ -83,9 +83,8 @@ if ds4_enabled:
     used_cutouts += ['center']
 
 
-if fps and fps < 0:
-    print('Please set the fps to 0 or above or remove the option.')
-    print('Last time I checked, time travel wasn\'t a thing yet.')
+if fps <= 0:
+    print('FPS must be set to at least 1.')
     exit()
 
 
@@ -167,7 +166,7 @@ print('For visualisation, you\'ve picked: %s.' % fxmode)
 print('You %s Razer support.' % ('enabled' if razer_enabled else 'disabled'))
 print('You %s DualShock 4 support.' % ('enabled' if ds4_enabled else 'disabled'))
 print('There are %s NodeMCUs configured.' % len(nodemcus))
-print('The FPS are set to %s.' % (fps if fps else 'unlimited'))
+print('The FPS are set to %s.' % fps)
 print('---------------------------------------------------')
 
 
@@ -179,10 +178,9 @@ def timed(method):
 
 
 while True:
-    if fps:
-        sleep(1 / fps)
+    sleep(1 / fps)
 
-        if benchmark:
-            timed(fx.loop)
-        else:
-            fx.loop()
+    if benchmark:
+        timed(fx.loop)
+    else:
+        fx.loop()
