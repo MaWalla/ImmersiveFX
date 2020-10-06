@@ -1,27 +1,39 @@
 {
-  "fxmode": "screenfx",
+  "fxmode": "pulseviz",
+  "fps": 60,
   "benchmark": false,
-  "fps": 144,
-  "kelvin": 3800,
-  "razer": false,
-  "preset": "high",
+  "preset": "medium",
   "source_name": "alsa_output.pci-0000_00_1b.0.analog-stereo.monitor",
-  "nodemcus": [
-    {
-      "id": "samplemcu",
-      "ip": "192.168.178.100",
+  "devices": {
+    "desk": {
+      "type": "esp",
+      "ip": "192.168.178.10",
       "port": 9000,
-      "leds": 50,
-      "cutout": "bottom",
-      "flip": true
+      "leds": 64,
+      "kelvin": 3800,
+      "flip": true,
+      "cutout": "left"
     },
-    {
-      "id": "randommcu",
-      "ip": "192.168.178.101",
+    "table": {
+      "enabled": false,
+      "type": "esp",
+      "ip": "192.168.178.20",
       "port": 9000,
-      "leds": 24,
-      "cutout": "left",
-      "flip": false
+      "leds": 32,
+      "kelvin": 3600,
+      "flip": false,
+      "cutout": "bottom"
+    },
+    "keyboard": {
+      "enabled": false,
+      "type": "razer",
+      "flip": false,
+      "cutout": "bottom"
+    },
+    "ps4": {
+      "type": "ds4",
+      "device_num": 1,
+      "cutout": "center"
     }
-  ]
+  }
 }
