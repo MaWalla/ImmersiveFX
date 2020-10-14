@@ -1,8 +1,10 @@
+import sys
 import json
 import socket
 import glob
-from time import sleep, time
+from time import sleep
 
+from benchmark import benchmark
 from pulse import PulseViz
 from pulseviz import pacmd
 from razer import Razer
@@ -57,10 +59,6 @@ fps = config.get('fps', 60)
 if fps <= 0:
     print('FPS must be set to at least 1.')
     exit()
-
-
-# boolean, decides on whether to run the loop though time measurement or not
-benchmark = config.get('benchmark')
 
 
 # string, defines the cutout size from the screen border towards the inside
@@ -188,18 +186,10 @@ print('There are %s devices configured.' % len(final_devices))
 print('The FPS are set to %s.' % fps)
 print('---------------------------------------------------')
 
+if '--benchmark' in sys.argv:
+    benchmark(fx)
 
-def timed(method):
-    start = time()
-    method()
-    elapsed = (time() - start) * 1000
-    print('Cycle took %s ms' % elapsed)
-
-
-while True:
-    sleep(1 / fps)
-
-    if benchmark:
-        timed(fx.loop)
-    else:
+else:
+    while True:
+        sleep(1 / fps)
         fx.loop()
