@@ -102,11 +102,12 @@ class PulseViz(Common):
                     ip = device['ip']
                     port = device['port']
                     kelvin = device['kelvin']
+                    brightness = device['brightness']
 
                     threading.Thread(
                         target=self.sock.sendto,
                         args=(
-                            bytes(self.prepare_data(normalized_color, kelvin), 'utf-8'), (ip, port)
+                            bytes(self.prepare_data(normalized_color, kelvin, brightness), 'utf-8'), (ip, port)
                         ),
                         kwargs={}
                     ).start()
@@ -125,9 +126,10 @@ class PulseViz(Common):
                         device['enabled'] = False
 
     @staticmethod
-    def prepare_data(color, kelvin):
+    def prepare_data(color, kelvin, brightness):
         return json.dumps({
             'mode': 'single_color',
             'input_color': color,
             'kelvin': kelvin,
+            'brightness': brightness,
         })
