@@ -21,7 +21,7 @@ def list_sources():
         raise PACmdException('pacmd exited with return code {0}'.format(process.returncode))
 
     for line in stdout.splitlines(keepends=False):
-        line = line.decode('ascii')
+        line = line.decode('utf-8')
         match = re.match('^[\t]name: <(.*)>$', line)
         if match is not None:
             result.append(match.group(1))
