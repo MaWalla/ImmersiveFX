@@ -2,7 +2,10 @@
 My BlackWidow Chroma 2014 as test subject.
 No cherry keys were harmed during this experiment
 """
-from openrazer.client import DeviceManager
+try:
+    from openrazer.client import DeviceManager
+except ImportError:
+    print('warning: openrazer or its python binding is not installed, razer devices won\'t work!')
 
 
 class Razer:
