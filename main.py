@@ -39,6 +39,7 @@ if not fxmode:
 if fxmode == 'pulseviz':
     sources = pacmd.list_sources()
     if not config.get('source_name') in sources:
+        print('---------------------------------------------------')
         print('PulseViz requires an audio source but no source_name was defined ')
         print('or the source isn\'t available right now. Pick another source please:\n')
         for index, source in enumerate(sources):
@@ -51,6 +52,22 @@ if fxmode == 'pulseviz':
         except (IndexError, ValueError):
             print(f'Invalid choice! It must be a number bigger than 0 and smaller than {len(sources)}, exiting...')
             exit()
+
+    if not config.get('pulseviz_mode') in PulseViz.modes:
+        print('---------------------------------------------------')
+        print('No PulseViz visualisation was defined ')
+        print('pick one now:\n')
+        for index, source in enumerate(PulseViz.modes):
+            print(f'{index}: {source}')
+
+        choice = input()
+
+        try:
+            config['pulseviz_mode'] = PulseViz.modes[int(choice)]
+        except (IndexError, ValueError):
+            print(f'Invalid choice! It must be a number bigger than 0 and smaller than {len(PulseViz.modes)}, ')
+            print(f'defaulting to {PulseViz.modes[0]}. ')
+            config['pulseviz_mode'] = PulseViz.modes[0]
 
 # integer value, sets the fps. reducing this value reduces strain on cpu
 # provides a sane default of 60, which should keep modern CPUs busy :D
@@ -165,6 +182,7 @@ if fxmode == 'screenfx':
 elif fxmode == 'pulseviz':
     fx = PulseViz(
         sock=sock,
+        mode=config.get('pulseviz_mode'),
         ds4_paths=ds4_paths,
         source_name=source_name,
         devices=final_devices,
