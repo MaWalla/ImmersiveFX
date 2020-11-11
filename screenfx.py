@@ -1,4 +1,3 @@
-import json
 import threading
 
 import numpy as np
@@ -65,6 +64,40 @@ class ScreenFX(Common):
         average = cv_area.mean(axis=axis)
         return average
 
+    def esp_processing(self, esp, pixel_data):
+        ip = esp['ip']
+        port = esp['port']
+        leds = esp['leds']
+        brightness = esp['brightness']
+        cutout = esp['cutout']
+        flip = esp['flip']
+        sections = esp['sections']
+        kelvin = esp['kelvin']
+
+        average = np.array_split(pixel_data[cutout], leds, axis=0)
+        if flip:
+            average = np.flip(average)
+        average = np.array_split(average, sections)
+
+        offset = 0
+        for section in range(sections):
+            average_section = average[section]
+            current_section_length = len(average_section)
+            self.set_esp_colors(
+                ip,
+                port,
+                brightness,
+                kelvin,
+                data={
+                    'mode': 'streamline',
+                    'led_list': [rgb.mean(axis=0).astype(int).tolist() for rgb in average_section],
+                    'offset': offset,
+                    'current_length': current_section_length,
+                }
+            )
+
+            offset += current_section_length
+
     def loop(self):
         image = ImageGrab.grab()
         pixel_data = {cutout: self.process_image(image, cutout) for cutout in self.used_cutouts}
@@ -73,7 +106,7 @@ class ScreenFX(Common):
             if device['enabled']:
                 if device['type'] == 'esp':
                     threading.Thread(
-                        target=self.esp_colors,
+                        target=self.esp_processing,
                         args=(),
                         kwargs={
                             'esp': device,
@@ -105,43 +138,4 @@ class ScreenFX(Common):
                         },
                     ).start()
 
-    def esp_colors(self, esp, pixel_data):
-        ip = esp['ip']
-        port = esp['port']
-        leds = esp['leds']
-        brightness = esp['brightness']
-        cutout = esp['cutout']
-        flip = esp['flip']
-        sections = esp['sections']
-        kelvin = esp['kelvin']
 
-        average = np.array_split(pixel_data[cutout], leds, axis=0)
-        if flip:
-            average = np.flip(average)
-        average = np.array_split(average, sections)
-
-        offset = 0
-
-        for section in range(sections):
-            average_section = average[section]
-            current_section_length = len(average_section)
-            self.sock.sendto(
-                bytes(self.esp_data(
-                    average_section,
-                    brightness,
-                    offset,
-                    current_section_length,
-                    kelvin,
-                ), 'utf-8'), (ip, port)
-            )
-            offset += current_section_length
-
-    def esp_data(self, average, brightness, offset, current_length, kelvin):
-        return json.dumps({
-            'mode': 'streamline',
-            'offset': offset,
-            'current_length': current_length,
-            'led_list': [rgb.mean(axis=0).astype(int).tolist() for rgb in average],
-            'brightness': brightness,
-            'kelvin': kelvin,
-        })

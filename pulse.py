@@ -1,4 +1,3 @@
-import json
 import threading
 import numpy as np
 
@@ -82,6 +81,9 @@ class PulseViz(Common):
 
         return value
 
+    def color_intensity(self):
+        pass
+
     def loop(self):
         values = self.pulseviz_bands.values
 
@@ -101,15 +103,22 @@ class PulseViz(Common):
                 if device['type'] == 'esp':
                     ip = device['ip']
                     port = device['port']
-                    kelvin = device['kelvin']
                     brightness = device['brightness']
+                    kelvin = device['kelvin']
 
                     threading.Thread(
-                        target=self.sock.sendto,
-                        args=(
-                            bytes(self.prepare_data(normalized_color, kelvin, brightness), 'utf-8'), (ip, port)
-                        ),
-                        kwargs={}
+                        target=self.set_esp_colors,
+                        args=(),
+                        kwargs={
+                            'ip': ip,
+                            'port': port,
+                            'brightness': brightness,
+                            'kelvin': kelvin,
+                            'data': {
+                                'mode': 'single_color',
+                                'input_color': normalized_color,
+                            },
+                        },
                     ).start()
 
                 elif device['type'] == 'ds4':
@@ -124,12 +133,3 @@ class PulseViz(Common):
                         ).start()
                     except KeyError:
                         device['enabled'] = False
-
-    @staticmethod
-    def prepare_data(color, kelvin, brightness):
-        return json.dumps({
-            'mode': 'single_color',
-            'input_color': color,
-            'kelvin': kelvin,
-            'brightness': brightness,
-        })

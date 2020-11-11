@@ -1,3 +1,6 @@
+import json
+
+
 class Common:
 
     def __init__(self, sock, ds4_paths, devices):
@@ -5,7 +8,17 @@ class Common:
         self.ds4_paths = ds4_paths
         self.devices = devices
 
-    def set_ds4_color(self, lightbar_color, path):
+    def set_esp_colors(self, ip, port, brightness, kelvin, data):
+        self.sock.sendto(
+            bytes(json.dumps({
+                'brightness': brightness,
+                'kelvin': kelvin,
+                **data,
+            }), 'utf-8'), (ip, port)
+        )
+
+    @staticmethod
+    def set_ds4_color(lightbar_color, path):
         red, green, blue = lightbar_color
 
         red_path = f'{path[:-6]}red/brightness'
