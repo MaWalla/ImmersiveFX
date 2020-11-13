@@ -3,10 +3,13 @@ import colorsys
 import numpy as np
 
 from common import Common
-from pulseviz import bands
+from .bands import Bands, calculate_octave_bands
 
 
 class PulseViz(Common):
+    target_versions = ['dev']
+    target_platforms = ['linux']
+
     modes = ['intensity', 'rainbow road']
 
     def __init__(self, source_name, mode, *args, **kwargs):
@@ -97,10 +100,10 @@ class PulseViz(Common):
             'window_overlap': 0.5,
             'window_function': 'hanning',
             'weighting': 'Z',
-            'band_frequencies': bands.calculate_octave_bands(fraction=3)
+            'band_frequencies': calculate_octave_bands(fraction=3)
         }
 
-        self.pulseviz_bands = bands.Bands(**bands_data)
+        self.pulseviz_bands = Bands(**bands_data)
 
     def start_bands(self):
         self.pulseviz_bands.start()

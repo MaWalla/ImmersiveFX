@@ -8,13 +8,15 @@ from screeninfo import get_monitors
 from common import Common
 
 try:
-    from custom_cutouts import custom_cutouts
+    from .custom_cutouts import custom_cutouts
 except ModuleNotFoundError:
     def custom_cutouts(w, h):
         return {}
 
 
 class ScreenFX(Common):
+    target_versions = ['dev']
+    target_platforms = ['all']
 
     def __init__(self, used_cutouts, preset, *args, **kwargs):
         super().__init__(*args, **kwargs)

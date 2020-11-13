@@ -5,10 +5,9 @@ import glob
 from time import sleep
 
 from benchmark import benchmark
-from pulse import PulseViz
-from pulseviz import pacmd
+from fxmodes import PulseViz, ScreenFX
+from fxmodes.pulseviz import pacmd
 from razer import Razer
-from screenfx import ScreenFX
 
 try:
     with open('config.json') as file:
@@ -169,24 +168,25 @@ final_devices, used_cutouts = process_device_config()
 
 ds4_paths = {counter + 1: path for counter, path in enumerate(glob.glob('/sys/class/leds/0005:054C:05C4.*:global'))}
 
+# TODO move more power to the fxmodes
+0
+params = {
+    'sock': sock,
+    'ds4_paths': ds4_paths,
+    'devices': final_devices,
+    'preset': preset,
+    'used_cutouts': used_cutouts,
+    'mode': config.get('pulseviz_mode'),
+    'source_name': source_name,
+    'flags': sys.argv,
+}
+
 
 if fxmode == 'screenfx':
-    fx = ScreenFX(
-        sock=sock,
-        preset=preset,
-        ds4_paths=ds4_paths,
-        devices=final_devices,
-        used_cutouts=used_cutouts,
-    )
+    fx = ScreenFX(**params)
 
 elif fxmode == 'pulseviz':
-    fx = PulseViz(
-        sock=sock,
-        mode=config.get('pulseviz_mode'),
-        ds4_paths=ds4_paths,
-        source_name=source_name,
-        devices=final_devices,
-    )
+    fx = PulseViz(**params)
     fx.start_bands()
 else:
     print('No valid fxmode set, please pick screenfx or pulseviz')
