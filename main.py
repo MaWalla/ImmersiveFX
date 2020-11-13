@@ -115,51 +115,53 @@ def process_device_config():
 
     for name, device in devices.items():
         device_type = device.get('type')
-        if not device_type:
-            print(f'WARNING: you didn\'t define the device type for "{name}", skipping it.')
-        else:
-            if not device_type in required_keys.keys():
-                print(f'WARNING: device {name} has an invalid type, must be {required_keys.keys()}, skipping it')
+        device_enabled = device.get('enabled', True)
+        if device_enabled:
+            if not device_type:
+                print(f'WARNING: you didn\'t define the device type for "{name}", skipping it.')
             else:
-                if not (required_keys.get(device_type) - device.keys()):
-                    cutout = device.get('cutout')  # defined here cause we'll need that later
-
-                    device_config = {
-                        'type': device_type,
-                        'enabled': device.get('enabled', True),
-                        'brightness': device.get('brightness', 1),
-                        'kelvin': device.get('kelvin', 3800),
-                        'flip': device.get('flip', False),
-                        'cutout': cutout,
-                    }
-
-                    if device_type == 'esp':
-                        device_config = {
-                            'ip': device.get('ip'),
-                            'port': device.get('port'),
-                            'leds': device.get('leds'),
-                            'sections': device.get('sections', 1),
-                            **device_config,
-                        }
-                    if device_type == 'ds4':
-                        device_config = {
-                            'device_num': device.get('device_num'),
-                            **device_config,
-                        }
-
-                    if device_type == 'razer':
-                        device_config = {
-                            'openrazer': Razer(),
-                            **device_config
-                        }
-
-                    final_devices.append(device_config)
-
-                    if cutout not in used_cutouts:
-                        used_cutouts.append(cutout)
+                if not device_type in required_keys.keys():
+                    print(f'WARNING: device {name} has an invalid type, must be {required_keys.keys()}, skipping it')
                 else:
-                    print(f'WARNING: device {name} lacks  one of these keys: '
-                          f'{required_keys.get(device_type)} skipping it.')
+                    if not (required_keys.get(device_type) - device.keys()):
+                        cutout = device.get('cutout')  # defined here cause we'll need that later
+
+                        device_config = {
+                            'type': device_type,
+                            'enabled': device_enabled,
+                            'brightness': device.get('brightness', 1),
+                            'kelvin': device.get('kelvin', 3800),
+                            'flip': device.get('flip', False),
+                            'cutout': cutout,
+                        }
+
+                        if device_type == 'esp':
+                            device_config = {
+                                'ip': device.get('ip'),
+                                'port': device.get('port'),
+                                'leds': device.get('leds'),
+                                'sections': device.get('sections', 1),
+                                **device_config,
+                            }
+                        if device_type == 'ds4':
+                            device_config = {
+                                'device_num': device.get('device_num'),
+                                **device_config,
+                            }
+
+                        if device_type == 'razer':
+                            device_config = {
+                                'openrazer': Razer(),
+                                **device_config
+                            }
+
+                        final_devices.append(device_config)
+
+                        if cutout not in used_cutouts:
+                            used_cutouts.append(cutout)
+                    else:
+                        print(f'WARNING: device {name} lacks  one of these keys: '
+                              f'{required_keys.get(device_type)} skipping it.')
 
     return final_devices, used_cutouts
 
