@@ -4,6 +4,7 @@ import numpy as np
 
 from common import Common
 from .bands import Bands, calculate_octave_bands
+from .pacmd import list_sources
 
 
 class PulseViz(Common):
@@ -12,9 +13,9 @@ class PulseViz(Common):
 
     modes = ['intensity', 'rainbow road']
 
-    def __init__(self, source_name, mode, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.mode = mode
+        self.mode = self.get_mode()
 
         self.band_mapping = {
             0: [255, 0, 0],
@@ -91,9 +92,8 @@ class PulseViz(Common):
             33: 0.1,
         }
 
-
         bands_data = {
-            'source_name': source_name,
+            'source_name': self.get_source_name(),
             'sample_frequency': 44100,
             'sample_size': 8192,
             'window_size': 1024,
@@ -104,6 +104,7 @@ class PulseViz(Common):
         }
 
         self.pulseviz_bands = Bands(**bands_data)
+        self.start_bands()
 
     def splash(self):
         print('Welcome to ----------------------------- by MaWalla')
@@ -113,6 +114,53 @@ class PulseViz(Common):
         print('        █   █  █ █     █ █    ███   █  █           ')
         print('        █    ██  ███ ██  ███   █   ███ ████        ')
         print('-- backend: https://github.com/pckbls/pulseviz.py -')
+
+    def get_mode(self):
+        """
+        Choice menu for the preferred way to display the acquired pulseaudio data,
+        can also be set statically by setting a "pulseviz_mode" key in the config
+        """
+        selected_mode = self.config.get('pulseviz_mode')
+
+        while selected_mode not in self.modes:
+            print('---------------------------------------------------')
+            print('No PulseViz visualisation was defined, pick one now:\n')
+            for index, mode in enumerate(self.modes):
+                print(f'{index}: {mode}')
+
+            choice = input()
+
+            try:
+                selected_mode = self.modes[int(choice)]
+            except (IndexError, ValueError):
+                print('Invalid choice!')
+                print(f'It must be a number bigger than 0 and smaller than {len(self.modes)}, try again!')
+
+        return selected_mode
+
+    def get_source_name(self):
+        """
+        Choice menu for the used pulseaudio source,
+        can also be set statically by setting a "source_name" key in the config.
+        Options can be manually obtained with pactl list sources | grep 'Name:'
+        """
+        sources = list_sources()
+        chosen_source = self.config.get('source_name')
+        while chosen_source not in sources:
+            print('---------------------------------------------------')
+            print('PulseViz requires an audio source but no source_name was defined ')
+            print('or the source isn\'t available right now. Pick another source please:\n')
+            for index, source in enumerate(sources):
+                print(f'{index}: {source}')
+
+            choice = input()
+
+            try:
+                chosen_source = sources[int(choice)]
+            except (IndexError, ValueError):
+                print(f'Invalid choice! It must be a number bigger than 0 and smaller than {len(sources)}, try again!')
+
+        return chosen_source
 
     def start_bands(self):
         self.pulseviz_bands.start()

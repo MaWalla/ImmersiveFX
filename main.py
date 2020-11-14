@@ -1,12 +1,9 @@
 import sys
 import json
-import socket
-import glob
 from time import sleep
 
 from benchmark import benchmark
 from fxmodes import PulseViz, ScreenFX
-from fxmodes.pulseviz import pacmd
 from razer import Razer
 
 VERSION = 'dev'  # TODO find a better way than this
@@ -38,39 +35,6 @@ if not fxmode:
         print(f'Invalid choice! It must be a number bigger than 0 and smaller than {len(valid_fxmodes)}, exiting...')
         exit()
 
-if fxmode == 'pulseviz':
-    sources = pacmd.list_sources()
-    if not config.get('source_name') in sources:
-        print('---------------------------------------------------')
-        print('PulseViz requires an audio source but no source_name was defined ')
-        print('or the source isn\'t available right now. Pick another source please:\n')
-        for index, source in enumerate(sources):
-            print(f'{index}: {source}')
-
-        choice = input()
-
-        try:
-            config['source_name'] = sources[int(choice)]
-        except (IndexError, ValueError):
-            print(f'Invalid choice! It must be a number bigger than 0 and smaller than {len(sources)}, exiting...')
-            exit()
-
-    if not config.get('pulseviz_mode') in PulseViz.modes:
-        print('---------------------------------------------------')
-        print('No PulseViz visualisation was defined ')
-        print('pick one now:\n')
-        for index, source in enumerate(PulseViz.modes):
-            print(f'{index}: {source}')
-
-        choice = input()
-
-        try:
-            config['pulseviz_mode'] = PulseViz.modes[int(choice)]
-        except (IndexError, ValueError):
-            print(f'Invalid choice! It must be a number bigger than 0 and smaller than {len(PulseViz.modes)}, ')
-            print(f'defaulting to {PulseViz.modes[0]}. ')
-            config['pulseviz_mode'] = PulseViz.modes[0]
-
 # integer value, sets the fps. reducing this value reduces strain on cpu
 # provides a sane default of 60, which should keep modern CPUs busy :D
 fps = config.get('fps', 60)
@@ -86,21 +50,11 @@ if fps <= 0:
 preset = config.get('preset') or 'medium'
 
 
-# string, pulseaudio sink name for capturing audio data
-# options can be obtained with pactl list sources | grep 'Name:'
-source_name = config.get('source_name')
-
-
-devices = config.get('devices')
-
-
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
-
-
 def process_device_config():
     """
     Check if the device configs are complete and optimize the script to their cutouts
     """
+    devices = config.get('devices')
 
     if not devices:
         print('You didn\'t define devices in your config, which renders this script kinda useless')
@@ -169,17 +123,12 @@ def process_device_config():
 final_devices, used_cutouts = process_device_config()
 
 
-ds4_paths = {counter + 1: path for counter, path in enumerate(glob.glob('/sys/class/leds/0005:054C:05C4.*:global'))}
-
 # TODO move more power to the fxmodes
 params = {
-    'sock': sock,
-    'ds4_paths': ds4_paths,
     'devices': final_devices,
     'preset': preset,
     'used_cutouts': used_cutouts,
-    'mode': config.get('pulseviz_mode'),
-    'source_name': source_name,
+    'config': config,
     'flags': sys.argv,
     'core_version': VERSION,
 }
@@ -190,7 +139,6 @@ if fxmode == 'screenfx':
 
 elif fxmode == 'pulseviz':
     fx = PulseViz(**params)
-    fx.start_bands()
 else:
     print('No valid fxmode set, please pick screenfx or pulseviz')
     exit()

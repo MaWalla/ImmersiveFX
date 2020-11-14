@@ -1,4 +1,6 @@
+import glob
 import json
+import socket
 import sys
 
 
@@ -7,15 +9,19 @@ class Common:
     target_versions = None  # 'dev' works best for builtin fxmodes, external stuff should name actual versions though
     target_platforms = None  # check https://docs.python.org/3/library/sys.html#sys.platform or use 'all' if it applies
 
-    def __init__(self, sock, ds4_paths, devices, core_version, *args, flags=[], **kwargs):
+    def __init__(self, devices, core_version, config, *args, flags=[], **kwargs):
         """
         fancy little base class, make your fxmode inherit from it to spare yourself unnecessary work
         or don't, I'm a comment not a cop.
         """
-        self.sock = sock
-        self.ds4_paths = ds4_paths
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.ds4_paths = {
+            counter + 1: path
+            for counter, path in enumerate(glob.glob('/sys/class/leds/0005:054C:05C4.*:global'))
+        }
         self.devices = devices
 
+        self.config = config
         self.flags = flags
         self.check_target(core_version)
         self.splash()
