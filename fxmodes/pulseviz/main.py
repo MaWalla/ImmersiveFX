@@ -8,6 +8,8 @@ from .pacmd import list_sources
 
 
 class PulseViz(Common):
+    name = 'PulseViz'
+
     target_versions = ['dev']
     target_platforms = ['linux']
 

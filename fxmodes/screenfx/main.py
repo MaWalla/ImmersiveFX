@@ -15,10 +15,12 @@ except ModuleNotFoundError:
 
 
 class ScreenFX(Common):
+    name = 'ScreenFX'
+
     target_versions = ['dev']
     target_platforms = ['all']
 
-    def __init__(self, used_cutouts, preset, *args, **kwargs):
+    def __init__(self, used_cutouts, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.used_cutouts = used_cutouts
 
@@ -51,7 +53,7 @@ class ScreenFX(Common):
         }
 
         self.cutouts = {
-            **cutout_presets[preset],
+            **cutout_presets[self.config.get('preset', 'medium')],
             **custom_cutouts(w, h),
         }
 

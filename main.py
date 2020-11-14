@@ -3,7 +3,7 @@ import json
 from time import sleep
 
 from benchmark import benchmark
-from fxmodes import PulseViz, ScreenFX
+from fxmodes import available_fxmodes
 from razer import Razer
 
 VERSION = 'dev'  # TODO find a better way than this
@@ -18,11 +18,10 @@ except FileNotFoundError:
     exit()
 
 
-# string, decides what to display. screenfx should be cross platform while pulseviz is linux only
-valid_fxmodes = ['screenfx', 'pulseviz']
-fxmode = config.get('fxmode')
+valid_fxmodes = list(available_fxmodes.keys())
+selected_fxmode = available_fxmodes.get(config.get('fxmode'))
 
-if not fxmode:
+while not selected_fxmode:
     print('No FXMode was found inside your config. No big deal, you can pick it now:\n')
     for index, mode in enumerate(valid_fxmodes):
         print(f'{index}: {mode}')
@@ -30,9 +29,9 @@ if not fxmode:
     choice = input()
 
     try:
-        fxmode = valid_fxmodes[int(choice)]
+        selected_fxmode = available_fxmodes.get(valid_fxmodes[int(choice)])
     except (IndexError, ValueError):
-        print(f'Invalid choice! It must be a number bigger than 0 and smaller than {len(valid_fxmodes)}, exiting...')
+        print(f'Invalid choice! It must be a number bigger than 0 and smaller than {len(valid_fxmodes)}, try again!')
         exit()
 
 # integer value, sets the fps. reducing this value reduces strain on cpu
@@ -42,12 +41,6 @@ fps = config.get('fps', 60)
 if fps <= 0:
     print('FPS must be set to at least 1.')
     exit()
-
-
-# string, defines the cutout size from the screen border towards the inside
-# can be 'low', 'medium' or 'high'. High puts the most load on the CPU,
-# but offers more detail. This setting can also be subject to personal preference.
-preset = config.get('preset') or 'medium'
 
 
 def process_device_config():
@@ -128,22 +121,13 @@ final_devices, used_cutouts = process_device_config()
 # TODO move more power to the fxmodes
 params = {
     'devices': final_devices,
-    'preset': preset,
     'used_cutouts': used_cutouts,
     'config': config,
     'flags': sys.argv,
     'core_version': VERSION,
 }
 
-
-if fxmode == 'screenfx':
-    fx = ScreenFX(**params)
-
-elif fxmode == 'pulseviz':
-    fx = PulseViz(**params)
-else:
-    print('No valid fxmode set, please pick screenfx or pulseviz')
-    exit()
+fxmode = selected_fxmode(**params)
 
 print('')
 print('ImmersiveFX Core version %s' % VERSION)
@@ -152,9 +136,9 @@ print('The FPS are set to %s.' % fps)
 print('---------------------------------------------------')
 
 if '--benchmark' in sys.argv:
-    benchmark(fx)
+    benchmark(fxmode)
 
 else:
     while True:
         sleep(1 / fps)
-        fx.loop()
+        fxmode.loop()

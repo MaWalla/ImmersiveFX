@@ -5,6 +5,8 @@ import sys
 
 
 class Common:
+    name = 'ImmersiveFX Core'
+
     # those need to be set by their respective fxmodes, as a list containing all applying values
     target_versions = None  # 'dev' works best for builtin fxmodes, external stuff should name actual versions though
     target_platforms = None  # check https://docs.python.org/3/library/sys.html#sys.platform or use 'all' if it applies
