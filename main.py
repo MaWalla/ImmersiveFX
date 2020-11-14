@@ -9,6 +9,9 @@ from fxmodes import PulseViz, ScreenFX
 from fxmodes.pulseviz import pacmd
 from razer import Razer
 
+VERSION = 'dev'  # TODO find a better way than this
+
+
 try:
     with open('config.json') as file:
         config = json.load(file)
@@ -169,7 +172,6 @@ final_devices, used_cutouts = process_device_config()
 ds4_paths = {counter + 1: path for counter, path in enumerate(glob.glob('/sys/class/leds/0005:054C:05C4.*:global'))}
 
 # TODO move more power to the fxmodes
-0
 params = {
     'sock': sock,
     'ds4_paths': ds4_paths,
@@ -179,6 +181,7 @@ params = {
     'mode': config.get('pulseviz_mode'),
     'source_name': source_name,
     'flags': sys.argv,
+    'core_version': VERSION,
 }
 
 
@@ -192,14 +195,8 @@ else:
     print('No valid fxmode set, please pick screenfx or pulseviz')
     exit()
 
-print('Welcome to ----------------------------------------')
-print('███ █   █ █   █ ███ ██   ██ ███ █   █ ███ ███ ██ ██')
-print(' █  ██ ██ ██ ██ █   █ █ █    █  █   █ █   █    █ █ ')
-print(' █  █ █ █ █ █ █ ██  ██   █   █  ██ ██ ██  ██    █  ')
-print(' █  █   █ █   █ █   █ █   █  █   ███  █   █    █ █ ')
-print('███ █   █ █   █ ███ █ █ ██  ███   █   ███ █   ██ ██')
-print('-----------------------------------------by MaWalla')
-print('For visualisation, you\'ve picked: %s.' % fxmode)
+print('')
+print('ImmersiveFX Core version %s' % VERSION)
 print('There are %s devices configured.' % len(final_devices))
 print('The FPS are set to %s.' % fps)
 print('---------------------------------------------------')

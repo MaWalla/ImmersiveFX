@@ -55,6 +55,15 @@ class ScreenFX(Common):
             **custom_cutouts(w, h),
         }
 
+    def splash(self):
+        print('Welcome to ----------------------------------------')
+        print('         ██  ██ ██  ███ ███ ██  █ ███ ██ ██        ')
+        print('        █   █   █ █ █   █   █ █ █ █    █ █         ')
+        print('         █  █   ██  ██  ██  █ █ █ ██    █          ')
+        print('          █ █   █ █ █   █   █ █ █ █    █ █         ')
+        print('        ██   ██ █ █ ███ ███ █  ██ █   ██ ██        ')
+        print('---------------------------------------- by MaWalla')
+
     def process_image(self, image, cutout):
         if cutout in ['left', 'right']:
             axis = 1

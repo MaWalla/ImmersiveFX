@@ -4,10 +4,10 @@ import sys
 
 class Common:
     # those need to be set by their respective fxmodes, as a list containing all applying values
-    target_versions = None  # TODO find a good way for versioning
+    target_versions = None  # 'dev' works best for builtin fxmodes, external stuff should name actual versions though
     target_platforms = None  # check https://docs.python.org/3/library/sys.html#sys.platform or use 'all' if it applies
 
-    def __init__(self, sock, ds4_paths, devices, *args, core_version='dev', flags=[], **kwargs):
+    def __init__(self, sock, ds4_paths, devices, core_version, *args, flags=[], **kwargs):
         """
         fancy little base class, make your fxmode inherit from it to spare yourself unnecessary work
         or don't, I'm a comment not a cop.
@@ -18,6 +18,7 @@ class Common:
 
         self.flags = flags
         self.check_target(core_version)
+        self.splash()
 
     def check_target(self, core_version):
         """
@@ -25,7 +26,7 @@ class Common:
         can be overridden with --no-version-check and --no-platform-check, expect errors in this case though
         """
         if '--no-version-check' not in self.flags:
-            if core_version not in self.target_versions:
+            if core_version not in self.target_versions and 'dev' not in self.target_versions:
                 print('your ImmersiveFX Core is on version %(core)s but it needs to be %(targets)s.' % {
                     'core': core_version,
                     'targets': ', '.join(self.target_versions),
@@ -33,13 +34,24 @@ class Common:
                 exit()
 
         if '--no-platform-check' not in self.flags:
-            if 'all' not in self.target_platforms:
-                if sys.platform not in self.target_platforms:
-                    print('your platform is %(platform)s but it needs to be %(targets)s.' % {
-                        'platform': sys.platform,
-                        'targets': ', '.join(self.target_platforms),
-                    })
-                    exit()
+            if sys.platform not in self.target_platforms and 'all' not in self.target_platforms:
+                print('your platform is %(platform)s but it needs to be %(targets)s.' % {
+                    'platform': sys.platform,
+                    'targets': ', '.join(self.target_platforms),
+                })
+                exit()
+
+    def splash(self):
+        """
+        Override this in your fxmode and print whatever you want. Preferably some kinda logo of course
+        """
+
+        print('***************************************************')
+        print('*           NO SPLASH SCREEN SPECIFIED!           *')
+        print('*  you\'re seeing this because the fxmode creator  *')
+        print('*      didn\'t override the splash() method.       *')
+        print('*        No big deal but kinda boring, huh?       *')
+        print('***************************************************')
 
     def set_esp_colors(self, ip, port, brightness, kelvin, data):
         self.sock.sendto(

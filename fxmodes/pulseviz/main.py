@@ -105,6 +105,15 @@ class PulseViz(Common):
 
         self.pulseviz_bands = Bands(**bands_data)
 
+    def splash(self):
+        print('Welcome to ----------------------------- by MaWalla')
+        print('        ███ █  █ █    ██ ███ █   █ ███ ████        ')
+        print('        █ █ █  █ █   █   █   █   █  █     █        ')
+        print('        ███ █  █ █    █  ██  ██ ██  █   ██         ')
+        print('        █   █  █ █     █ █    ███   █  █           ')
+        print('        █    ██  ███ ██  ███   █   ███ ████        ')
+        print('-- backend: https://github.com/pckbls/pulseviz.py -')
+
     def start_bands(self):
         self.pulseviz_bands.start()
 
