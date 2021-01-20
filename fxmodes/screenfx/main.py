@@ -1,4 +1,5 @@
 import threading
+from math import sqrt
 
 import numpy as np
 
@@ -113,13 +114,19 @@ class ScreenFX(Common):
         ip = wled['ip']
         port = wled['port']
         leds = wled['leds']
-        # brightness = esp['brightness'] TODO add this server-sided
+        brightness = wled['brightness']
         cutout = wled['cutout']
 
         average = np.array_split(pixel_data[cutout], leds, axis=0)
-        data = [value.mean(axis=0).astype(int) for value in average]
+        data = [np.array(value.mean(axis=0) * brightness).astype(int) for value in average]
 
-        self.set_wled_colors(ip, port, data)
+        color_correction = []
+        for rgb in data:
+            rgb[1] = int((sqrt(rgb[1]) ** 1.825) + (rgb[1] / 100))
+            rgb[2] = int((sqrt(rgb[2]) ** 1.775) + (rgb[2] / 100))
+            color_correction.append(rgb)
+
+        self.set_wled_colors(ip, port, color_correction)
 
     def loop(self):
         image = ImageGrab.grab()
