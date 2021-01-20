@@ -109,6 +109,18 @@ class ScreenFX(Common):
 
             offset += current_section_length
 
+    def wled_processing(self, wled, pixel_data):
+        ip = wled['ip']
+        port = wled['port']
+        leds = wled['leds']
+        # brightness = esp['brightness'] TODO add this server-sided
+        cutout = wled['cutout']
+
+        average = np.array_split(pixel_data[cutout], leds, axis=0)
+        data = [value.mean(axis=0).astype(int) for value in average]
+
+        self.set_wled_colors(ip, port, data)
+
     def loop(self):
         image = ImageGrab.grab()
         pixel_data = {cutout: self.process_image(image, cutout) for cutout in self.used_cutouts}
@@ -121,6 +133,16 @@ class ScreenFX(Common):
                         args=(),
                         kwargs={
                             'esp': device,
+                            'pixel_data': pixel_data,
+                        },
+                    ).start()
+
+                elif device['type'] == 'wled':
+                    threading.Thread(
+                        target=self.wled_processing,
+                        args=(),
+                        kwargs={
+                            'wled': device,
                             'pixel_data': pixel_data,
                         },
                     ).start()
