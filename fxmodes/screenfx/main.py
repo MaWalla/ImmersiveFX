@@ -1,4 +1,5 @@
 import threading
+from math import sqrt
 
 import numpy as np
 
@@ -111,6 +112,24 @@ class ScreenFX(Common):
 
             offset += current_section_length
 
+    def wled_processing(self, wled, pixel_data):
+        ip = wled['ip']
+        port = wled['port']
+        leds = wled['leds']
+        brightness = wled['brightness']
+        cutout = wled['cutout']
+
+        average = np.array_split(pixel_data[cutout], leds, axis=0)
+        data = [np.array(value.mean(axis=0) * brightness).astype(int) for value in average]
+
+        color_correction = []
+        for rgb in data:
+            rgb[1] = int((sqrt(rgb[1]) ** 1.825) + (rgb[1] / 100))
+            rgb[2] = int((sqrt(rgb[2]) ** 1.775) + (rgb[2] / 100))
+            color_correction.append(rgb)
+
+        self.set_wled_colors(ip, port, color_correction)
+
     def loop(self):
         image = ImageGrab.grab()
         pixel_data = {cutout: self.process_image(image, cutout) for cutout in self.used_cutouts}
@@ -123,6 +142,16 @@ class ScreenFX(Common):
                         args=(),
                         kwargs={
                             'esp': device,
+                            'pixel_data': pixel_data,
+                        },
+                    ).start()
+
+                elif device['type'] == 'wled':
+                    threading.Thread(
+                        target=self.wled_processing,
+                        args=(),
+                        kwargs={
+                            'wled': device,
                             'pixel_data': pixel_data,
                         },
                     ).start()

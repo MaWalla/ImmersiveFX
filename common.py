@@ -2,6 +2,7 @@ import glob
 import json
 import socket
 import sys
+import numpy as np
 
 
 class Common:
@@ -69,6 +70,10 @@ class Common:
                 **data,
             }), 'utf-8'), (ip, port)
         )
+
+    def set_wled_colors(self, ip, port, data):
+        byte_data = bytes([2, 5] + np.array(data).ravel().tolist())
+        self.sock.sendto(byte_data, (ip, port))
 
     @staticmethod
     def set_ds4_color(lightbar_color, path):

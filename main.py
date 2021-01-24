@@ -55,6 +55,7 @@ def process_device_config():
 
     required_keys = {
         'esp': {'ip', 'port', 'leds', 'cutout'},
+        'wled': {'ip', 'leds', 'cutout'},
         'ds4': {'device_num', 'cutout'},
         'razer': {'cutout'},
     }
@@ -90,6 +91,13 @@ def process_device_config():
                                 'port': device.get('port'),
                                 'leds': device.get('leds'),
                                 'sections': device.get('sections', 1),
+                                **device_config,
+                            }
+                        if device_type == 'wled':
+                            device_config = {
+                                'ip': device.get('ip'),
+                                'port': device.get('port', 21324),
+                                'leds': device.get('leds'),
                                 **device_config,
                             }
                         if device_type == 'ds4':
