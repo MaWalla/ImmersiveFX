@@ -115,9 +115,14 @@ class ScreenFX(Common):
         port = wled['port']
         leds = wled['leds']
         brightness = wled['brightness']
+        flip = wled['flip']
         cutout = wled['cutout']
 
         average = np.array_split(pixel_data[cutout], leds, axis=0)
+        if flip:
+            # I think this causes a deprecation warning btw.
+            average = np.flip(average)
+
         data = [np.array(value.mean(axis=0) * brightness).astype(int) for value in average]
 
         color_correction = []
