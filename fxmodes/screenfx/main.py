@@ -1,6 +1,4 @@
 import threading
-from math import sqrt
-
 import numpy as np
 
 from PIL import ImageGrab
@@ -124,11 +122,9 @@ class ScreenFX(Common):
 
         color_correction = []
         for rgb in data:
-            rgb[1] = int((sqrt(rgb[1]) ** 1.825) + (rgb[1] / 100))
-            rgb[2] = int((sqrt(rgb[2]) ** 1.775) + (rgb[2] / 100))
-            color_correction.append(rgb)
+            color_correction.append(self.color_correction(rgb))
 
-        self.set_wled_colors(ip, port, color_correction)
+        self.set_wled_strip(ip, port, color_correction)
 
     def loop(self):
         image = ImageGrab.grab()

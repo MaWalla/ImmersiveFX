@@ -218,6 +218,15 @@ class PulseViz(Common):
                         },
                     ).start()
 
+                elif device['type'] == 'wled':
+                    threading.Thread(
+                        target=self.set_wled_color,
+                        args=(),
+                        kwargs={
+                            'wled': device,
+                            'rgb': normalized_color,
+                        },
+                    ).start()
                 elif device['type'] == 'ds4':
                     try:
                         threading.Thread(
@@ -245,7 +254,7 @@ class PulseViz(Common):
 
         for device in self.devices:
             if device['enabled']:
-                if device['type'] == 'esp':
+                if device['type'] in ('esp', 'wled'):
                     ip = device['ip']
                     port = device['port']
                     leds = device['leds']
@@ -259,22 +268,34 @@ class PulseViz(Common):
                         ] for index in range(leds)
                     ]
 
-                    threading.Thread(
-                        target=self.set_esp_colors,
-                        args=(),
-                        kwargs={
-                            'ip': ip,
-                            'port': port,
-                            'brightness': brightness,
-                            'kelvin': kelvin,
-                            'data': {
-                                'mode': 'streamline',
-                                'led_list': rainbow,
-                                'offset': 0,
-                                'current_length': leds,
+                    if device['type'] == 'esp':
+                        threading.Thread(
+                            target=self.set_esp_colors,
+                            args=(),
+                            kwargs={
+                                'ip': ip,
+                                'port': port,
+                                'brightness': brightness,
+                                'kelvin': kelvin,
+                                'data': {
+                                    'mode': 'streamline',
+                                    'led_list': rainbow,
+                                    'offset': 0,
+                                    'current_length': leds,
+                                },
                             },
-                        },
-                    ).start()
+                        ).start()
+
+                    if device['type'] == 'wled':
+                        threading.Thread(
+                            target=self.set_wled_strip,
+                            args=(),
+                            kwargs={
+                                'ip': ip,
+                                'port': port,
+                                'data': rainbow,
+                            },
+                        ).start()
 
     def loop(self):
         values = self.pulseviz_bands.values

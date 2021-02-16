@@ -2,6 +2,8 @@ import glob
 import json
 import socket
 import sys
+from math import sqrt
+
 import numpy as np
 
 
@@ -71,8 +73,18 @@ class Common:
             }), 'utf-8'), (ip, port)
         )
 
-    def set_wled_colors(self, ip, port, data):
-        byte_data = bytes([2, 5] + np.array(data).ravel().tolist())
+    def color_correction(self, rgb):
+        rgb[1] = int((sqrt(rgb[1]) ** 1.825) + (rgb[1] / 100))
+        rgb[2] = int((sqrt(rgb[2]) ** 1.775) + (rgb[2] / 100))
+        return rgb
+
+    def set_wled_color(self, wled, rgb):
+        corrected_rgb = self.color_correction(rgb)
+        byte_data = bytes([2, 5, *np.array([corrected_rgb for _ in range(wled['leds'])]).ravel()])
+        self.sock.sendto(byte_data, (wled['ip'], wled['port']))
+
+    def set_wled_strip(self, ip, port, data):
+        byte_data = bytes([2, 5, *np.array(data).ravel().tolist()])
         self.sock.sendto(byte_data, (ip, port))
 
     @staticmethod
