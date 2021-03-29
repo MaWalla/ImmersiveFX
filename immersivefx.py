@@ -7,7 +7,7 @@ from math import sqrt
 import numpy as np
 
 
-class Common:
+class Core:
     name = 'ImmersiveFX Core'
 
     # those need to be set by their respective fxmodes, as a list containing all applying values

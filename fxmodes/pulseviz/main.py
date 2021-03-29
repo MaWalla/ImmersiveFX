@@ -2,12 +2,12 @@ import threading
 import colorsys
 import numpy as np
 
-from common import Common
+from immersivefx import Core
 from .bands import Bands, calculate_octave_bands
 from .pacmd import list_sources
 
 
-class PulseViz(Common):
+class PulseViz(Core):
     name = 'PulseViz'
 
     target_versions = ['dev']

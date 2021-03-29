@@ -4,7 +4,7 @@ import numpy as np
 from PIL import ImageGrab
 from screeninfo import get_monitors
 
-from common import Common
+from immersivefx import Core
 
 try:
     from .custom_cutouts import custom_cutouts
@@ -13,7 +13,7 @@ except ModuleNotFoundError:
         return {}
 
 
-class ScreenFX(Common):
+class ScreenFX(Core):
     name = 'ScreenFX'
 
     target_versions = ['dev']
@@ -180,5 +180,3 @@ class ScreenFX(Common):
                             'data': average_razer
                         },
                     ).start()
-
-
