@@ -111,8 +111,6 @@ class ScreenFX(Core):
             offset += current_section_length
 
     def wled_processing(self, wled, pixel_data):
-        ip = wled['ip']
-        port = wled['port']
         leds = wled['leds']
         brightness = wled['brightness']
         flip = wled['flip']
@@ -129,7 +127,7 @@ class ScreenFX(Core):
         for rgb in data:
             color_correction.append(self.color_correction(rgb))
 
-        self.set_wled_strip(ip, port, color_correction)
+        self.set_wled_strip(wled, color_correction)
 
     def loop(self):
         image = ImageGrab.grab()

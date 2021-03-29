@@ -291,8 +291,7 @@ class PulseViz(Core):
                             target=self.set_wled_strip,
                             args=(),
                             kwargs={
-                                'ip': ip,
-                                'port': port,
+                                'wled': device,
                                 'data': rainbow,
                             },
                         ).start()
