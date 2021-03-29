@@ -1,5 +1,4 @@
 import glob
-import json
 import socket
 import sys
 from math import sqrt
@@ -71,16 +70,8 @@ class Core:
         print('*        No big deal but kinda boring, huh?       *')
         print('***************************************************')
 
-    def set_esp_colors(self, ip, port, brightness, kelvin, data):
-        self.sock.sendto(
-            bytes(json.dumps({
-                'brightness': brightness,
-                'kelvin': kelvin,
-                **data,
-            }), 'utf-8'), (ip, port)
-        )
-
-    def color_correction(self, rgb):
+    @staticmethod
+    def color_correction(rgb):
         """
         Corrects an rgb value for (my) WS2811 strip. The given formular isn't too expensive but highly
         subjective towards my LEDs and personal feeling about somewhat accurate colors.

@@ -54,7 +54,7 @@ For WLED devices, the following keys are needed:
 `ip`: IP address of the WLED device
 `leds`: The amount of LEDs attached to the device, if you're not sure, use the value specified within WLEDs Config > LED Preferences
 
-If you wanna use ScreenFX, you'll additionally need to set the key `cutout` with the value being either: `top`, `bottom`, `left`, `right` or a custom value as specified in `custom_cutouts.py`. This will reflect the screen area projected onto the LEDs.
+If you wanna use ScreenFX, you'll additionally need to set the key `cutout` with the value being either: `top`, `bottom`, `left`, `right`, `center`, or a custom value as specified in `custom_cutouts.py`. This will reflect the screen area projected onto the LEDs.
 
 Optionally you can also set these keys:
 `enabled`: either true or false, to enable/disable the device, defaults to true.
@@ -64,7 +64,10 @@ Optionally you can also set these keys:
 
 Razer keyboards take the keys `enabled`, `flip`, `brightness` and `cutout`, with exactly the same specification as for WLED above. the type has to be `razer` however.
 
-The same applies to DualShock 4 controllers minus `flip` (since there's only 1 LED anyway). The `type` needs to be `ds4` here.
+The same applies to DualShock 4 controllers minus `flip` (since there's only 1 LED anyway).
+The `type` needs to be `ds4` here. Additionally you'll also have to set the key `device_num` counting up, starting at 1.
+With that, you can assign different (custom) cutouts for example to different controllers.
+The first parsed usually is the first connected controller, the second parsed the second and so on.
 
 ## Notes
 

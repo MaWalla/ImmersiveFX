@@ -6,21 +6,18 @@
   "source_name": "alsa_output.pci-0000_00_1b.0.analog-stereo.monitor",
   "devices": {
     "desk": {
-      "type": "esp",
+      "type": "wled",
       "ip": "192.168.178.10",
-      "port": 9000,
       "leds": 64,
-      "kelvin": 3800,
       "flip": true,
       "cutout": "left"
     },
     "table": {
       "enabled": false,
-      "type": "esp",
+      "type": "wled",
       "ip": "192.168.178.20",
       "port": 9000,
       "leds": 32,
-      "kelvin": 3600,
       "flip": false,
       "cutout": "bottom"
     },
