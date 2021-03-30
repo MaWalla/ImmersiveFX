@@ -1,13 +1,13 @@
-from time import time
+from time import time, sleep
 
 import numpy as np
 
 
-def benchmark(fx):
+def benchmark(fx, fps):
     print('You enabled the benchmark flag, time to measure performance!')
     print('The script will run for a specified amount of cycles, then')
     print('present the results and exit. More cycles take longer to finish.')
-    print('Please specify the amount of cycles now (defaults to 1000).')
+    print('Please specify the amount of cycles now (defaults to 200).')
     print('---------------------------------------------------')
 
     cycle_choice = input()
@@ -18,7 +18,7 @@ def benchmark(fx):
     try:
         cycles = int(cycle_choice)
     except ValueError:
-        cycles = 1000
+        cycles = 200
 
     quarter = cycles / 4
     quarter_passed = False
@@ -34,6 +34,7 @@ def benchmark(fx):
         fx.loop()
         elapsed = (time() - start) * 1000
         data.append(elapsed)
+        sleep(1 / fps)
 
     print('Lets go!')
     while cycle < cycles:
@@ -53,5 +54,8 @@ def benchmark(fx):
     result = np.asarray(data)
     print('Benchmark complete!')
     print('---------------------------------------------------')
-    print(f'On average, a cycle took {result.mean()} ms.')
-    print(f'The longest cycle took {result.max()} ms, the shortest {result.min()} ms.')
+    print('On average, a cycle took %s ms.' % result.mean().round(decimals=2))
+    print('The longest cycle took %(longest)s ms, the shortest %(shortest)s ms.' % {
+        'longest': result.max().round(decimals=2),
+        'shortest': result.min().round(decimals=2),
+    })

@@ -54,7 +54,7 @@ print('ImmersiveFX Core version %s' % VERSION)
 print('---------------------------------------------------')
 
 if '--benchmark' in sys.argv:
-    benchmark(fxmode)
+    benchmark(fxmode, fps)
 
 else:
     while True:
