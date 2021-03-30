@@ -19,10 +19,7 @@ class ScreenFX(Core):
     target_versions = ['dev']
     target_platforms = ['all']
 
-    def __init__(self, used_cutouts, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.used_cutouts = used_cutouts
-
+    def __init__(self, *args, config, **kwargs):
         monitor = get_monitors()[0]  # for now, just take the first one's boundaries
         w = monitor.width   # shortcuts
         h = monitor.height  # more shortcuts yay
@@ -52,9 +49,41 @@ class ScreenFX(Core):
         }
 
         self.cutouts = {
-            **cutout_presets[self.config.get('preset', 'medium')],
+            **cutout_presets[config.get('preset', 'medium')],
             **custom_cutouts(w, h),
         }
+        self.used_cutouts = set()
+
+        super().__init__(*args, config=config, **kwargs)
+
+    def parse_devices(self, config):
+        # this will give us a dict of dicts containg the device config, we can extend it!
+        # for recognition purposes each device is named
+        base_devices = super().parse_devices(config)
+
+        # We'll turn the device config into a list here on purpose since the name isn't needed in this case
+        screenfx_devices = []
+
+        devices = config.get('devices')
+
+        for name, device_config in base_devices.items():
+            cutout = devices.get(name).get('cutout')
+
+            if cutout:
+                if cutout in self.cutouts:
+                    self.used_cutouts = {*self.used_cutouts, cutout}
+                    screenfx_devices.append({**device_config, 'cutout': cutout})
+                else:
+                    print(f'Device {name} has an invalid cutout. If its a custom one, please make sure')
+                    print('its specified in custom_cutouts.py')
+            else:
+                print(f'Device {name} is missing the cutout key, which is required for ScreenFX though, skipping it.')
+
+        if not screenfx_devices:
+            print('ScreenFX is missing valid devices, perhaps none of them have a cutout specified? Exiting...')
+            exit(1)
+
+        return screenfx_devices
 
     def splash(self):
         print('Welcome to ----------------------------------------')

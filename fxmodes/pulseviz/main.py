@@ -108,6 +108,11 @@ class PulseViz(Core):
         self.pulseviz_bands = Bands(**bands_data)
         self.start_bands()
 
+    def parse_devices(self, config):
+        # strip away the device names and make it a list,
+        # since we won't need em, but a bit of extra performance is nice!
+        return [device for name, device in super().parse_devices(config).items()]
+
     def splash(self):
         print('Welcome to ----------------------------- by MaWalla')
         print('        ███ █  █ █    ██ ███ █   █ ███ ████        ')

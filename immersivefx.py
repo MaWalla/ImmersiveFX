@@ -5,6 +5,8 @@ from math import sqrt
 
 import numpy as np
 
+from razer import Razer
+
 
 class Core:
     name = 'ImmersiveFX Core'  # override this in your fxmode
@@ -13,7 +15,7 @@ class Core:
     target_versions = None  # 'dev' works best for builtin fxmodes, external stuff should name actual versions though
     target_platforms = None  # check https://docs.python.org/3/library/sys.html#sys.platform or use 'all' if it applies
 
-    def __init__(self, devices, core_version, config, *args, flags=[], **kwargs):
+    def __init__(self, core_version, config, *args, flags=[], **kwargs):
         """
         fancy little base class, make your fxmode inherit from it to spare yourself unnecessary work
         or don't, I'm a comment not a cop.
@@ -23,12 +25,88 @@ class Core:
             counter + 1: path
             for counter, path in enumerate(glob.glob('/sys/class/leds/0005:054C:05C4.*:global'))
         }
-        self.devices = devices
 
         self.config = config
+        self.devices = self.parse_devices(config)
         self.flags = flags
         self.check_target(core_version)
         self.splash()
+
+    def parse_devices(self, config):
+        """
+        reads config.json and configures everything according to it. This method only tales care of the basics,
+        so you may wanna extend it if your fxmode takes/requires additional settings.
+        See fxmodes/screenfx/main.py for a reference implementation
+        :return:
+        """
+        #  These keys need to be set per device, everything else has some kinda default instead
+        required_keys = {
+            'wled': {'ip', 'leds', 'cutout'},
+            'ds4': {'device_num', 'cutout'},
+            'razer': set()
+        }
+
+        # Here we'll put the final configurations
+        final_devices = {}
+
+        devices = config.get('devices')
+
+        if not devices:
+            print('You didn\'t define devices in your config, which renders this program kinda useless')
+            exit()
+
+        for name, device in devices.items():
+            device_enabled = device.get('enabled', True)
+
+            if device_enabled:
+                device_type = device.get('type')
+
+                if device_type:
+                    if device_type not in required_keys.keys():
+                        print(f'WARNING: device {name} has an invalid type, must be {required_keys.keys()}, skipping it')
+                    else:
+                        if not (required_keys.get(device_type) - device.keys()):
+
+                            base_config = {
+                                'type': device_type,
+                                'enabled': device_enabled,
+                                'brightness': device.get('brightness', 1),
+                                'flip': device.get('flip', False),
+                            }
+
+                            if device_type == 'wled':
+                                device_config = {
+                                    'ip': device.get('ip'),
+                                    'port': device.get('port', 21324),
+                                    'leds': device.get('leds'),
+                                    **base_config,
+                                }
+                            if device_type == 'ds4':
+                                device_config = {
+                                    'device_num': device.get('device_num'),
+                                    **base_config,
+                                }
+
+                            if device_type == 'razer':
+                                device_config = {
+                                    'openrazer': Razer(),
+                                    **base_config,
+                                }
+
+                            final_devices[name] = device_config
+
+                        else:
+                            print(f'WARNING: device {name} lacks one of these keys: '
+                                  f'{required_keys.get(device_type)} skipping it.')
+                else:
+                    print(f'WARNING: you didn\'t define the device type for "{name}", skipping it.')
+
+        if not final_devices:
+            print('ERROR: There\'s no device with complete configuration, please check your config!')
+            print('Exiting now...')
+            exit(1)
+
+        return final_devices
 
     def loop(self):
         """
