@@ -1,3 +1,4 @@
+
 # ImmersiveFX
 ImmersiveFX is a framework which interfaces WLED over UDP, Razer Keyboards (specifically the BlackWidow Chroma 2014) and the Lightbar of DualShock 4 controllers.
 
@@ -24,7 +25,7 @@ Besides that, you're hopefully only limited by your creativity. If you're limite
 |Razer:        |yes  |no         |no         |
 |DualShock 4:  |yes  |no         |no         |
 
-*I only use Linux, so Windows and Mac OS are entirely untested. The things should work according to their used library documententation for example.
+*I only use Linux, so Windows and Mac OS are entirely untested. The things should work though, according to their used library documententation for example.
 
 Both pulseaudio and the way I speak to Dualshock 4 controllers are limited to Linux so support for other platforms is unlikely, unless there are different implementations for those.
 
@@ -45,22 +46,22 @@ Distributions such as Ubuntu or Debian might still link `python` to `python2` an
 - run `source env/bin/activate` (if you use fish for whatever reason its `env/bin/activate.fish`) to enter the venv.
 - run `pip install -r requirements.txt` to install dependencies.
 
-After this is done, create a file named `config.json` and edit it with your favourite text editor!
+After this is done, create a file named `config.json`, or copy/rename the provided `config.json.example` for the sake of simplicity and edit it with your favourite text editor!
 
 in there, you'll need at least the following key `devices` which is an object whose keys are named the way you want to name your devices. Their required value differ, based on the device type.
 
 For WLED devices, the following keys are needed:
-`type`: set to "wled" of course.
-`ip`: IP address of the WLED device
-`leds`: The amount of LEDs attached to the device, if you're not sure, use the value specified within WLEDs Config > LED Preferences
+- `type`: set to "wled" of course.
+- `ip`: IP address of the WLED device
+- `leds`: The amount of LEDs attached to the device, if you're not sure, use the value specified within WLEDs Config > LED Preferences
 
 If you wanna use ScreenFX, you'll additionally need to set the key `cutout` with the value being either: `top`, `bottom`, `left`, `right`, `center`, or a custom value as specified in `custom_cutouts.py`. This will reflect the screen area projected onto the LEDs.
 
 Optionally you can also set these keys:
-`enabled`: either true or false, to enable/disable the device, defaults to true.
-`flip`: either true or false, reverses the LED order to display the data the other way around, defaults to false.
-`brightness`: float value between 0 and 1, sets the brightness of the LEDs where 0 is off and 1 is full brightness. Defaults to 1, but lower values like 0.75 may offer a more accurate color representation on LEDs like the ws2812 strips.
-`port`: number, sets a custom port for the IP. defaults to `21324`, which is the default for wled.
+- `enabled`: either true or false, to enable/disable the device, defaults to true.
+- `flip`: either true or false, reverses the LED order to display the data the other way around, defaults to false.
+- `brightness`: float value between 0 and 1, sets the brightness of the LEDs where 0 is off and 1 is full brightness. Defaults to 1, but lower values like 0.75 may offer a more accurate color representation on LEDs like the ws2812 strips.
+- `port`: number, sets a custom port for the IP. defaults to `21324`, which is the default for wled.
 
 Razer keyboards take the keys `enabled`, `flip`, `brightness` and `cutout`, with exactly the same specification as for WLED above. the type has to be `razer` however.
 
