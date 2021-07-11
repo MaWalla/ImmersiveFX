@@ -211,6 +211,17 @@ class PulseViz(Core):
                             'rgb': normalized_color,
                         },
                     ).start()
+
+                if device['type'] == 'arduino':
+                    threading.Thread(
+                        target=self.set_arduino_color,
+                        args=(),
+                        kwargs={
+                            'arduino': device,
+                            'rgb': normalized_color,
+                        },
+                    ).start()
+
                 elif device['type'] == 'ds4':
                     try:
                         threading.Thread(
@@ -256,6 +267,24 @@ class PulseViz(Core):
                         args=(),
                         kwargs={
                             'wled': device,
+                            'data': rainbow,
+                        },
+                    ).start()
+
+                if device['type'] == 'arduino':
+                    leds = device['leds']
+
+                    rainbow = [[
+                        int(color * 255) for color in colorsys.hsv_to_rgb(
+                            ((scale * index / leds) + self.rainbow_offset) / scale, 1, 1
+                        )
+                    ] for index in range(leds)
+                    ]
+
+                    threading.Thread(
+                        target=self.set_arduino_strip,
+                        args=(),
+                        kwargs={
                             'data': rainbow,
                         },
                     ).start()

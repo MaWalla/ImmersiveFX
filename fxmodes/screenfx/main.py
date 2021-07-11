@@ -105,11 +105,19 @@ class ScreenFX(Core):
         average = cv_area.mean(axis=axis)
         return average
 
+    def arduino_processing(self, arduino, pixel_data):
+        leds = self.led_processing(arduino, pixel_data)
+        self.set_arduino_strip(leds)
+
     def wled_processing(self, wled, pixel_data):
-        leds = wled['leds']
-        brightness = wled['brightness']
-        flip = wled['flip']
-        cutout = wled['cutout']
+        leds = self.led_processing(wled, pixel_data)
+        self.set_wled_strip(wled, leds)
+
+    def led_processing(self, device, pixel_data):
+        leds = device['leds']
+        brightness = device['brightness']
+        flip = device['flip']
+        cutout = device['cutout']
 
         average = np.array_split(pixel_data[cutout], leds, axis=0)
         if flip:
@@ -122,7 +130,7 @@ class ScreenFX(Core):
         for rgb in data:
             color_correction.append(self.color_correction(rgb))
 
-        self.set_wled_strip(wled, color_correction)
+        return color_correction
 
     def loop(self):
         image = ImageGrab.grab()
@@ -136,6 +144,16 @@ class ScreenFX(Core):
                         args=(),
                         kwargs={
                             'wled': device,
+                            'pixel_data': pixel_data,
+                        },
+                    ).start()
+
+                elif device['type'] == 'arduino':
+                    threading.Thread(
+                        target=self.arduino_processing,
+                        args=(),
+                        kwargs={
+                            'arduino': device,
                             'pixel_data': pixel_data,
                         },
                     ).start()

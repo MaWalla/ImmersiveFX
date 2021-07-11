@@ -1,4 +1,6 @@
 import glob
+import serial
+import threading
 import socket
 import sys
 from math import sqrt
@@ -26,6 +28,7 @@ class Core:
             for counter, path in enumerate(glob.glob('/sys/class/leds/0005:054C:05C4.*:global'))
         }
 
+        self.serial_device = None
         self.config = config
         self.devices = self.parse_devices(config)
         self.flags = flags
@@ -42,6 +45,7 @@ class Core:
         #  These keys need to be set per device, everything else has some kinda default instead
         required_keys = {
             'wled': {'ip', 'leds', 'cutout'},
+            'arduino': {'path', 'leds', 'cutout'},
             'ds4': {'device_num', 'cutout'},
             'razer': set()
         }
@@ -81,6 +85,18 @@ class Core:
                                     'leds': device.get('leds'),
                                     **base_config,
                                 }
+                            if device_type == 'arduino':
+                                baud = device.get('baud', 115200)
+
+                                device_config = {
+                                    'path': device.get('path'),
+                                    'baud': baud,
+                                    'leds': device.get('leds'),
+                                    **base_config,
+                                }
+
+                                self.serial_device = serial.Serial(device.get('path'), baud)
+
                             if device_type == 'ds4':
                                 device_config = {
                                     'device_num': device.get('device_num'),
@@ -160,6 +176,23 @@ class Core:
         rgb[2] = int((sqrt(rgb[2]) ** 1.775) + (rgb[2] / 100))
         return rgb
 
+    def set_arduino_color(self, arduino, rgb):
+        """
+        Sends a single color to the whole Arduino strip
+        :param arduino: The Arduino device
+        :param rgb: the color value in rgb
+        """
+        byte_data = bytes(np.array([rgb for _ in range(arduino['leds'])]).ravel().tolist())
+        self.serial_device.write(byte_data)
+
+    def set_arduino_strip(self, data):
+        """
+        Sends an array of colors to an Arduino device
+        :param data: the color value in rgb
+        """
+        byte_data = bytes(np.array(data).ravel().tolist())
+        self.serial_device.write(byte_data)
+
     def set_wled_color(self, wled, rgb):
         """
         Sends a single color to the whole WLED strip
@@ -174,7 +207,7 @@ class Core:
         """
         Sends an array of colors to a wled device
         :param wled: The WLED device
-        :param rgb: the color value in rgb
+        :param data: the color value in rgb
         """
         byte_data = bytes([2, 5, *np.array(data).ravel().tolist()])
         self.sock.sendto(byte_data, (wled['ip'], wled['port']))
