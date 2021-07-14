@@ -20,10 +20,11 @@ def list_sources():
     if process.returncode != 0:
         raise PACmdException('pacmd exited with return code {0}'.format(process.returncode))
 
-    for line in stdout.splitlines(keepends=False):
-        line = line.decode('utf-8')
-        match = re.match('^[\t]name: <(.*)>$', line)
-        if match is not None:
-            result.append(match.group(1))
+    output = ''.join([line.decode('utf-8') for line in stdout.splitlines(keepends=False)]).split('index')[1:]
+    devices = [device.split('\t') for device in output]
 
-    return result
+    for device in devices:
+        name, *_ = [prop for prop in device if 'name: ' in prop]
+        device_name, *_ = [prop for prop in device if 'device.product.name = ' in prop]
+
+        yield name[6:].replace('<', '').replace('>', ''), device_name[22:].replace('"', '')

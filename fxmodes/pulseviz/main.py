@@ -50,19 +50,19 @@ class PulseViz(Core):
         can also be set statically by setting a "source_name" key in the config.
         Options can be manually obtained with pactl list sources | grep 'Name:'
         """
-        sources = list_sources()
+        sources = {name: device_name for name, device_name in list_sources()}
         chosen_source = self.config.get('source_name')
         while chosen_source not in sources:
             print('---------------------------------------------------')
             print('PulseViz requires an audio source but no source_name was defined ')
             print('or the source isn\'t available right now. Pick another source please:\n')
             for index, source in enumerate(sources):
-                print(f'{index}: {source}')
+                print(f'{index}: {sources.get(source, source)}')
 
             choice = input()
 
             try:
-                chosen_source = sources[int(choice)]
+                chosen_source = list(sources)[int(choice)]
             except (IndexError, ValueError):
                 print(f'Invalid choice! It must be a number bigger than 0 and smaller than {len(sources)}, try again!')
 
