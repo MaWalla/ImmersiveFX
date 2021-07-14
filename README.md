@@ -22,6 +22,7 @@ Besides that, you're hopefully only limited by your creativity. If you're limite
 |Device        |Linux|Windows    |Mac OS     |
 |--------------|-----|-----------|-----------|
 |WLED:         |yes  |untested*  |untested*  |
+|Arduino:      |yes  |untested*  |untested*  |
 |Razer:        |yes  |no         |no         |
 |DualShock 4:  |yes  |no         |no         |
 
@@ -54,6 +55,12 @@ For WLED devices, the following keys are needed:
 - `type`: set to "wled" of course.
 - `ip`: IP address of the WLED device
 - `leds`: The amount of LEDs attached to the device, if you're not sure, use the value specified within WLEDs Config > LED Preferences
+
+Arduino devices need these keys:
+- `type`: its "arduino"
+- `path`: path to the device, like '/dev/ttyACM0' on Linux and mac OS, or 'COM3' on Windows
+- `baud`: baudrate for communication, defaults to 115200, must match with the client
+- `leds`: The amount of LEDs attached to the device, must match with the client
 
 If you wanna use ScreenFX, you'll additionally need to set the key `cutout` with the value being either: `top`, `bottom`, `left`, `right`, `center`, or a custom value as specified in `custom_cutouts.py`. This will reflect the screen area projected onto the LEDs.
 
