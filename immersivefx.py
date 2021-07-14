@@ -1,6 +1,5 @@
 import glob
 import serial
-import threading
 import socket
 import sys
 from math import sqrt
@@ -210,9 +209,21 @@ class Core:
         """
         Sends an array of colors to a wled device
         :param wled: The WLED device
-        :param data: the color value in rgb
+        :param data: a list of rgb values
         """
-        byte_data = bytes([2, 5, *np.array(data).ravel().tolist()])
+        flip = wled['flip']
+        brightness = wled['brightness']
+
+        if flip:
+            data = np.flip(data, axis=0)
+
+        flat_data = np.array([
+            self.color_correction(np.array(value) * brightness)
+            for value in data
+        ]).astype(int).ravel()
+
+        byte_data = bytes([2, 5, *flat_data.tolist()])
+
         self.sock.sendto(byte_data, (wled['ip'], wled['port']))
 
     @staticmethod

@@ -229,10 +229,7 @@ class PulseViz(Core):
         for device in self.devices:
             if device['enabled']:
                 if device['type'] == 'wled':
-                    ip = device['ip']
-                    port = device['port']
                     leds = device['leds']
-                    brightness = device['brightness']
 
                     rainbow = [[
                             int(color * 255) for color in colorsys.hsv_to_rgb(

@@ -118,13 +118,9 @@ class ScreenFX(Core):
     def led_processing(self, device, pixel_data):
         leds = device['leds']
         brightness = device['brightness']
-        flip = device['flip']
         cutout = device['cutout']
 
         average = np.array_split(pixel_data[cutout], leds, axis=0)
-        if flip:
-            # I think this causes a deprecation warning btw.
-            average = np.flip(average)
 
         data = [np.array(value.mean(axis=0) * brightness).astype(int) for value in average]
 
