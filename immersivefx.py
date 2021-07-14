@@ -72,6 +72,7 @@ class Core:
                                 'enabled': device_enabled,
                                 'brightness': device.get('brightness', 1),
                                 'flip': device.get('flip', False),
+                                'color_correction': device.get('color_correction', False)
                             }
 
                             if device_type == 'wled':
@@ -166,8 +167,10 @@ class Core:
         :param wled: The WLED device
         :param rgb: the color value in rgb
         """
-        corrected_rgb = self.color_correction(rgb)
-        byte_data = bytes([2, 5, *np.array([corrected_rgb for _ in range(wled['leds'])]).ravel()])
+        if wled['color_correction']:
+            rgb = self.color_correction(rgb)
+
+        byte_data = bytes([2, 5, *np.array([rgb for _ in range(wled['leds'])]).ravel()])
         self.sock.sendto(byte_data, (wled['ip'], wled['port']))
 
     def set_wled_strip(self, wled, data):

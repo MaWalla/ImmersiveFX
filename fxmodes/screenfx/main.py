@@ -76,8 +76,10 @@ class ScreenFX(Core):
                 else:
                     print(f'Device {name} has an invalid cutout. If its a custom one, please make sure')
                     print('its specified in custom_cutouts.py')
+                    exit(1)
             else:
                 print(f'Device {name} is missing the cutout key, which is required for ScreenFX though, skipping it.')
+                exit(1)
 
         if not screenfx_devices:
             print('ScreenFX is missing valid devices, perhaps none of them have a cutout specified? Exiting...')
@@ -118,11 +120,14 @@ class ScreenFX(Core):
 
         data = [np.array(value.mean(axis=0) * brightness).astype(int) for value in average]
 
-        color_correction = []
-        for rgb in data:
-            color_correction.append(self.color_correction(rgb))
+        if wled['color_correction']:
+            color_correction = []
+            for rgb in data:
+                color_correction.append(self.color_correction(rgb))
+            self.set_wled_strip(wled, color_correction)
+        else:
+            self.set_wled_strip(wled, data)
 
-        self.set_wled_strip(wled, color_correction)
 
     def loop(self):
         image = ImageGrab.grab()
