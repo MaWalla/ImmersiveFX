@@ -1,7 +1,8 @@
-from .pulseviz import PulseViz
+from .pulseviz import Intensity, RainbowRoad
 from .screenfx import ScreenFX
 
 available_fxmodes = {
-    PulseViz.name: PulseViz,
     ScreenFX.name: ScreenFX,
+    Intensity.name: Intensity,
+    RainbowRoad.name: RainbowRoad
 }

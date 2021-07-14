@@ -13,65 +13,8 @@ class PulseViz(Core):
     target_versions = ['dev']
     target_platforms = ['linux']
 
-    modes = ['intensity', 'rainbow road']
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.mode = self.get_mode()
-
-        self.band_mapping = {
-            0: [255, 0, 0],
-            1: [255, 0, 0],
-            2: [255, 0, 0],
-            3: [255, 0, 0],
-            4: [255, 0, 0],
-            5: [255, 0, 0],
-            6: [255, 0, 0],
-            7: [255, 0, 0],
-            8: [255, 0, 0],
-            9: [255, 128, 0],
-            10: [255, 255, 0],
-            11: [255, 255, 0],
-            12: [255, 255, 0],
-            13: [255, 255, 0],
-            14: [255, 255, 0],
-            15: [128, 255, 0],
-            16: [0, 255, 0],
-            17: [0, 255, 0],
-            18: [0, 255, 0],
-            19: [0, 255, 0],
-            20: [0, 255, 0],
-            21: [0, 255, 128],
-            22: [0, 255, 255],
-            23: [0, 255, 255],
-            24: [0, 255, 255],
-            25: [0, 255, 255],
-            26: [0, 255, 255],
-            27: [0, 128, 255],
-            28: [0, 0, 255],
-            29: [0, 0, 255],
-            30: [0, 0, 255],
-            31: [0, 0, 255],
-            32: [0, 0, 255],
-            33: [0, 0, 255],
-        }
-
-        self.rainbow_offset = 0
-        self.acceleration_weight = {
-            0: 0.25,
-            1: 0.33,
-            2: 0.5,
-            3: 0.75,
-            4: 0.83,
-            5: 1,
-            6: 1,
-            7: 0.75,
-            8: 0.5,
-            9: 0.33,
-            10: 0.1,
-            11: 0.05,
-            **{index + 12: 0 for index in range(21)},
-        }
 
         bands_data = {
             'source_name': self.get_source_name(),
@@ -100,29 +43,6 @@ class PulseViz(Core):
         print('        █   █  █ █     █ █    ███   █  █           ')
         print('        █    ██  ███ ██  ███   █   ███ ████        ')
         print('-- backend: https://github.com/pckbls/pulseviz.py -')
-
-    def get_mode(self):
-        """
-        Choice menu for the preferred way to display the acquired pulseaudio data,
-        can also be set statically by setting a "pulseviz_mode" key in the config
-        """
-        selected_mode = self.config.get('pulseviz_mode')
-
-        while selected_mode not in self.modes:
-            print('---------------------------------------------------')
-            print('No PulseViz visualisation was defined, pick one now:\n')
-            for index, mode in enumerate(self.modes):
-                print(f'{index}: {mode}')
-
-            choice = input()
-
-            try:
-                selected_mode = self.modes[int(choice)]
-            except (IndexError, ValueError):
-                print('Invalid choice!')
-                print(f'It must be a number bigger than 0 and smaller than {len(self.modes)}, try again!')
-
-        return selected_mode
 
     def get_source_name(self):
         """
@@ -154,121 +74,10 @@ class PulseViz(Core):
     def stop_bands(self):
         self.pulseviz_bands.stop()
 
+    def loop(self):
+        return self.pulseviz_bands.values
+
     @staticmethod
     def data_conversion(value, minimum, maximum):
         multiplicator = (value - minimum) / (maximum - minimum)
         return multiplicator * multiplicator * multiplicator
-
-    @staticmethod
-    def post_process_color(value, color):
-        if value != color.max():
-            value *= 0.8
-
-        value *= 255 / (color.max() or 1)
-
-        return value
-
-    def intensity_mode(self, values):
-        converted_values = [[
-            self.data_conversion(value, values.min(), values.max()) * color if not np.isinf(value) else 0
-            for color in self.band_mapping[num]
-        ] for num, value in enumerate(values)]
-
-        color = np.array(converted_values).mean(axis=0)
-        normalized_color = np.clip([
-            self.post_process_color(rgb, color) for rgb in color
-        ], 0, 255).astype(int).tolist()
-
-        for device in self.devices:
-            if device['enabled']:
-                if device['type'] == 'wled':
-                    threading.Thread(
-                        target=self.set_wled_color,
-                        args=(),
-                        kwargs={
-                            'wled': device,
-                            'rgb': normalized_color,
-                        },
-                    ).start()
-
-                if device['type'] == 'arduino':
-                    threading.Thread(
-                        target=self.set_arduino_color,
-                        args=(),
-                        kwargs={
-                            'arduino': device,
-                            'rgb': normalized_color,
-                        },
-                    ).start()
-
-                elif device['type'] == 'ds4':
-                    try:
-                        threading.Thread(
-                            target=self.set_ds4_color,
-                            args=[],
-                            kwargs={
-                                'lightbar_color': normalized_color,
-                                'path': self.ds4_paths[device['device_num']]
-                            },
-                        ).start()
-                    except KeyError:
-                        device['enabled'] = False
-
-    def rainbow_road(self, values, scale=360):
-        movement = np.sum([
-            self.data_conversion(value, values.min(), values.max()) * self.acceleration_weight[index]
-            for index, value in enumerate(values)
-        ])
-
-        if movement > 0:
-            self.rainbow_offset += movement
-
-        if self.rainbow_offset > scale:
-            self.rainbow_offset -= scale
-
-        for device in self.devices:
-            if device['enabled']:
-                if device['type'] == 'wled':
-                    leds = device['leds']
-
-                    rainbow = [[
-                            int(color * 255) for color in colorsys.hsv_to_rgb(
-                                ((scale * index / leds) + self.rainbow_offset) / scale, 1, 1
-                            )
-                        ] for index in range(leds)
-                    ]
-
-                    threading.Thread(
-                        target=self.set_wled_strip,
-                        args=(),
-                        kwargs={
-                            'wled': device,
-                            'data': rainbow,
-                        },
-                    ).start()
-
-                if device['type'] == 'arduino':
-                    leds = device['leds']
-
-                    rainbow = [[
-                        int(color * 255) for color in colorsys.hsv_to_rgb(
-                            ((scale * index / leds) + self.rainbow_offset) / scale, 1, 1
-                        )
-                    ] for index in range(leds)
-                    ]
-
-                    threading.Thread(
-                        target=self.set_arduino_strip,
-                        args=(),
-                        kwargs={
-                            'data': rainbow,
-                        },
-                    ).start()
-
-    def loop(self):
-        values = self.pulseviz_bands.values
-
-        if self.mode == 'intensity':
-            self.intensity_mode(values)
-        elif self.mode == 'rainbow road':
-            self.rainbow_road(values)
