@@ -1,0 +1,6 @@
+[submodule "fxmodes/ScreenFX"]
+	path = fxmodes/ScreenFX
+	url = git@github.com:MaWalla/ScreenFX.git
+[submodule "fxmodes/PulseViz"]
+	path = fxmodes/PulseViz
+	url = git@github.com:MaWalla/PulseViz.git

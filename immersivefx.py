@@ -1,12 +1,10 @@
-import glob
-import serial
-import socket
 import sys
-from math import sqrt
+import threading
+from time import sleep, time
 
 import numpy as np
 
-from razer import Razer
+from devices import WLED, Serial, DualShock
 
 
 class Core:
@@ -21,22 +19,52 @@ class Core:
         fancy little base class, make your fxmode inherit from it to spare yourself unnecessary work
         or don't, I'm a comment not a cop.
         """
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.ds4_paths = {
-            counter + 1: path
-            for counter, path in enumerate(glob.glob('/sys/class/leds/0005:054C:05C4.*:global'))
-        }
-
-        self.serial_device = None
-        self.config = config
-        self.devices = self.parse_devices(config)
         self.flags = flags
         self.check_target(core_version)
+
+        self.config = config
+        self.devices = self.parse_devices(config)
+
+        self.data_thread = None
+        self.device_threads = []
+
+        self.device_classes = {
+            'wled': WLED,
+            'serial': Serial,
+            'dualshock': DualShock,
+
+        }
+
+        self.raw_data = np.zeros([1, 3])  # empty, but valid staring point
+        self.frame_sleep = 1000 / self.config.get('fps', 30)
+
         self.splash()
+
+    def start_threads(self):
+        """
+        initializes and starts data and device threads, call this in your fxmode, usually at the end
+        """
+        self.data_thread = threading.Thread(
+            target=self.data_loop,
+            args=(),
+            kwargs={},
+        )
+
+        self.device_threads = [
+            threading.Thread(
+                target=self.device_loop,
+                args=({'name': device, **device_config},),
+                kwargs={},
+            ) for device, device_config in self.devices.items()
+        ]
+
+        self.data_thread.start()
+        for thread in self.device_threads:
+            thread.start()
 
     def parse_devices(self, config):
         """
-        reads config.json and configures everything according to it. This method only tales care of the basics,
+        reads config.json and configures everything according to it. This method only takes care of the basics,
         so you may wanna extend it if your fxmode takes/requires additional settings.
         See fxmodes/screenfx/main.py for a reference implementation
         :return:
@@ -44,9 +72,8 @@ class Core:
         #  These keys need to be set per device, everything else has some kinda default instead
         required_keys = {
             'wled': {'ip', 'leds', 'cutout'},
-            'arduino': {'path', 'leds', 'cutout'},
-            'ds4': {'device_num', 'cutout'},
-            'razer': set()
+            'serial': {'path', 'leds', 'cutout'},
+            'dualshock': {'device_num', 'cutout'},
         }
 
         # Here we'll put the final configurations
@@ -85,7 +112,7 @@ class Core:
                                     'leds': device.get('leds'),
                                     **base_config,
                                 }
-                            if device_type == 'arduino':
+                            if device_type == 'serial':
                                 baud = device.get('baud', 115200)
 
                                 device_config = {
@@ -95,17 +122,9 @@ class Core:
                                     **base_config,
                                 }
 
-                                self.serial_device = serial.Serial(device.get('path'), baud)
-
-                            if device_type == 'ds4':
+                            if device_type == 'dualshock':
                                 device_config = {
                                     'device_num': device.get('device_num'),
-                                    **base_config,
-                                }
-
-                            if device_type == 'razer':
-                                device_config = {
-                                    'openrazer': Razer(),
                                     **base_config,
                                 }
 
@@ -123,13 +142,6 @@ class Core:
             exit(1)
 
         return final_devices
-
-    def loop(self):
-        """
-        This function will be continuously called by main.py
-        So override it and let it do some magic!
-        """
-        pass
 
     def check_target(self, core_version):
         """
@@ -164,89 +176,70 @@ class Core:
         print('*        No big deal but kinda boring, huh?       *')
         print('***************************************************')
 
-    @staticmethod
-    def color_correction(rgb):
+    def data_processing(self, *args, **kwargs):
         """
-        Corrects an rgb value for (my) WS2811 strip. The given formular isn't too expensive but highly
-        subjective towards my LEDs and personal feeling about somewhat accurate colors.
-        :param rgb: input rgb list
-        :return: corrected rgb list
+        Override this in your fxmode and continuously set self.raw_data
         """
-        rgb[1] = int((sqrt(rgb[1]) ** 1.825) + (rgb[1] / 100))
-        rgb[2] = int((sqrt(rgb[2]) ** 1.775) + (rgb[2] / 100))
-        return rgb
+        pass
 
-    def set_arduino_color(self, arduino, rgb):
+    def data_loop(self, *args, **kwargs):
         """
-        Sends a single color to the whole Arduino strip
-        :param arduino: The Arduino device
-        :param rgb: the color value in rgb
+        Manages data cycle timing, for handling preferably use data_processing
         """
-        byte_data = bytes(np.array([rgb for _ in range(arduino['leds'])]).ravel().tolist())
-        self.serial_device.write(byte_data)
+        while True:
+            start = time()
 
-    def set_arduino_strip(self, data):
+            self.data_processing()
+
+            duration = (time() - start) * 1000
+
+            if duration > self.frame_sleep:
+                print('WARNING: data cycle took longer than frame time!')
+                print(f'frame time: {round(self.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
+                print('If this happens repeatedly, consider lowering the fps.')
+            else:
+                sleep((self.frame_sleep - duration) / 1000)
+
+    def device_processing(self, device, device_instance):
         """
-        Sends an array of colors to an Arduino device
-        :param data: the color value in rgb
+        Override this in your fxmode and process raw data so you end up with a list of rgb arrays
+
+        :param device: device info as per config, provided so that custom fxmode config keys can be respected
+        :param device_instance: device class instance, containing further info
+        :return: a 2d numpy array; a list of rgb lists
         """
-        byte_data = bytes(np.array(data).ravel().tolist())
-        self.serial_device.write(byte_data)
+        return np.zeros([1, 3])
 
-    def set_wled_color(self, wled, rgb):
+    def device_loop(self, device):
         """
-        Sends a single color to the whole WLED strip
-        :param wled: The WLED device
-        :param rgb: the color value in rgb
+        Thread manager for a device. Creates a class instance for it and runs a continuous loop to send data
+
+        :param device: device info as per config
         """
-        if wled['color_correction']:
-            rgb = self.color_correction(rgb)
+        device_type = device.get('type')
+        device_class = self.device_classes.get(device_type)
 
-        byte_data = bytes([2, 5, *np.array([rgb for _ in range(wled['leds'])]).ravel()])
-        self.sock.sendto(byte_data, (wled['ip'], wled['port']))
+        if device_class:
+            device_instance = device_class(device)
 
-    def set_wled_strip(self, wled, data):
-        """
-        Sends an array of colors to a wled device
-        :param wled: The WLED device
-        :param data: a list of rgb values
-        """
-        flip = wled['flip']
-        brightness = wled['brightness']
+            while True:
+                if not device_instance.enabled:
+                    break
 
-        if flip:
-            data = np.flip(data, axis=0)
+                start = time()
 
-        flat_data = np.array([
-            self.color_correction(np.array(value) * brightness)
-            for value in data
-        ]).astype(int).ravel()
+                data = np.array(self.device_processing(device, device_instance))
 
-        byte_data = bytes([2, 5, *flat_data.tolist()])
+                if device_instance.flip:
+                    data = np.flip(data, axis=0)
 
-        self.sock.sendto(byte_data, (wled['ip'], wled['port']))
+                device_instance.loop(data)
 
-    @staticmethod
-    def set_ds4_color(lightbar_color, path):
-        """
-        Sends an rgb color to a DualShock 4 controller for its lightbar
-        :param lightbar_color: rgb value that is sent to the lightbar
-        :param path: device path that's gonna be used
-        """
-        red, green, blue = lightbar_color
+                duration = (time() - start) * 1000
 
-        red_path = f'{path[:-6]}red/brightness'
-        green_path = f'{path[:-6]}green/brightness'
-        blue_path = f'{path[:-6]}blue/brightness'
-
-        r = open(red_path, 'w')
-        r.write(str(red))
-        r.close()
-
-        g = open(green_path, 'w')
-        g.write(str(green))
-        g.close()
-
-        b = open(blue_path, 'w')
-        b.write(str(blue))
-        b.close()
+                if duration > self.frame_sleep:
+                    print(f'WARNING: device "{device_instance.name}" cycle took longer than frame time!')
+                    print(f'frame time: {round(self.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
+                    print('If this happens repeatedly, consider lowering the fps.')
+                else:
+                    sleep((self.frame_sleep - duration) / 1000)
