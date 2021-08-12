@@ -3,7 +3,7 @@ import sys
 import json
 from time import sleep
 
-VERSION = '1.0.0'  # TODO find a better way than this, grabbing git tags perhaps
+VERSION = '1.0.1'  # TODO find a better way than this, grabbing git tags perhaps
 
 try:
     with open('config.json') as file:

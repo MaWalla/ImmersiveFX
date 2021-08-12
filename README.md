@@ -25,7 +25,7 @@ Besides that, you're hopefully only limited by your creativity. If you're limite
 |Serial:       |yes  |untested*  |untested*  |
 |DualShock 4:  |yes  |no         |no         |
 
-*I only use Linux, so Windows and Mac OS are entirely untested. The things should work though, according to their used library documententation for example.
+*I only use Linux, so Windows and Mac OS are more or less untested. The things should work though, according to their used library documententation for example.
 ** Tested on a M1 MacBook Air, but prior to the 1.0.0 release. Performance was bad and captured data corrupted
 
 Both pulseaudio and the way I speak to Dualshock 4 controllers are limited to Linux so support for other platforms is unlikely, unless there are different implementations for those.
@@ -40,7 +40,7 @@ Both pulseaudio and the way I speak to Dualshock 4 controllers are limited to Li
 - clone the repo somewhere.
 - open a terminal in the cloned folder.
 
-Start off by doing `git submodule init` to pull in the reference fxmodes ScreenFX and PulseViz
+Start off by doing `git submodule update --init` to pull in the reference fxmodes ScreenFX and PulseViz
 
 I boldly assume that `python` links to `python3` and `python-pip` and `python-venv` are installed.
 Distributions such as Ubuntu or Debian might still link `python` to `python2` and offer `python3` as packages etc. so in that case use those.
