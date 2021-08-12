@@ -21,14 +21,8 @@
       "flip": false,
       "cutout": "bottom"
     },
-    "keyboard": {
-      "enabled": false,
-      "type": "razer",
-      "flip": false,
-      "cutout": "bottom"
-    },
     "ps4": {
-      "type": "ds4",
+      "type": "dualshock",
       "device_num": 1,
       "cutout": "center"
     }
