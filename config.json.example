@@ -1,16 +1,11 @@
 {
-  "fxmode": "pulseviz",
-  "fps": 60,
-  "benchmark": false,
-  "preset": "medium",
-  "source_name": "alsa_output.pci-0000_00_1b.0.analog-stereo.monitor",
+  "fps": 30,
   "devices": {
     "desk": {
       "type": "wled",
       "ip": "192.168.178.10",
       "leds": 64,
-      "flip": true,
-      "cutout": "left"
+      "flip": true
     },
     "table": {
       "enabled": false,
@@ -18,13 +13,16 @@
       "ip": "192.168.178.20",
       "port": 9000,
       "leds": 32,
-      "flip": false,
-      "cutout": "bottom"
+      "flip": false
+    },
+    "arduino-thingy": {
+      "type": "serial",
+      "leds": 24,
+      "path": "/dev/ttyACM0"
     },
     "ps4": {
       "type": "dualshock",
-      "device_num": 1,
-      "cutout": "center"
+      "device_num": 1
     }
   }
 }

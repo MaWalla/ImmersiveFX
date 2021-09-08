@@ -4,31 +4,25 @@ ImmersiveFX is a framework which interfaces WLED over UDP, Serial devices, and t
 
 It allows you to build Applications that process data to display them onto above devices. It includes 2 reference fxmodes as submodules:
 
-**ScreenFX**, which can display the content of screen borders (similar to Phillips Ambilight) 
+[**ScreenFX**](https://github.com/MaWalla/ScreenFX), which can display the content of screen borders (similar to Phillips Ambilight) 
 
-**PulseViz**, which analyzes a pulseaudio stream and either displays the average color based on the music, strongly inspired by [this Video](https://www.youtube.com/watch?v=Sk3v-92r7R0), or makes it a flowing rainbow, reacting to the bass.
+[**PulseViz**](https://github.com/MaWalla/PulseViz), which analyzes a pulseaudio stream and either displays the average color based on the music, strongly inspired by [this Video](https://www.youtube.com/watch?v=Sk3v-92r7R0), or makes it a flowing rainbow, reacting to the bass.
 The backend is based off [this Project](https://github.com/pckbls/pulseviz.py).
 
 Besides that, you're hopefully only limited by your creativity. If you're limited by the framework however, consider making a pull request or issue!
 
 ## Compatibility
-#### shipped fxmodes
-|Mode     |Linux|Windows    |Mac OS     |
-|---------|-----|-----------|-----------|
-|ScreenFX:|yes  |untested*  |untested** |
-|PulseViz:|yes  |no         |no         |
 
-#### device compatibility
 |Device        |Linux|Windows    |Mac OS     |
 |--------------|-----|-----------|-----------|
 |WLED:         |yes  |untested*  |yes        |
 |Serial:       |yes  |untested*  |untested*  |
-|DualShock 4:  |yes  |no         |no         |
+|DualShock**:  |yes  |no         |no         |
 
-*I only use Linux, so Windows and Mac OS are more or less untested. The things should work though, according to their used library documententation for example.
-** Tested on a M1 MacBook Air, but prior to the 1.0.0 release. Performance was bad and captured data corrupted
+untested* : While I haven't used ImmersiveFX with those configurations on those platforms yet, there is a good chance
+that it will work regardless, due to the libraries used being cross-compatible.
 
-Both pulseaudio and the way I speak to Dualshock 4 controllers are limited to Linux so support for other platforms is unlikely, unless there are different implementations for those.
+DualShock**: This currently only refers to DS4 controllers. While I do own a DS5 controller, I haven't yet found a way to interface the LED.
 
 ## Requirements
 
@@ -49,36 +43,66 @@ Distributions such as Ubuntu or Debian might still link `python` to `python2` an
 - run `source env/bin/activate` (if you use fish for whatever reason its `env/bin/activate.fish`) to enter the venv.
 - run `pip install -r requirements.txt` to install dependencies.
 
-After this is done, create a file named `config.json`, or copy/rename the provided `config.json.example` for the sake of simplicity and edit it with your favourite text editor!
+ImmersiveFX can now be run with `python main.py`
 
-in there, you'll need at least the following key `devices` which is an object whose keys are named the way you want to name your devices. Their required value differ, based on the device type.
+You'll need to configure it first though, see below!
 
-For WLED devices, the following keys are needed:
-- `type`: set to "wled" of course.
-- `ip`: IP address of the WLED device
-- `leds`: The amount of LEDs attached to the device, if you're not sure, use the value specified within WLEDs Config > LED Preferences
+## Configuration
 
-Serial devices need these keys:
-- `type`: its "serial"
-- `path`: path to the device, like '/dev/ttyACM0' on Linux and mac OS, or 'COM3' on Windows
-- `baud`: baudrate for communication, defaults to 115200, must match with the client
-- `leds`: The amount of LEDs attached to the device, must match with the client
+Create a file named `config.json`, or copy/rename the provided `config.json.example` for the sake of simplicity and edit it with your favourite text editor!
 
-For DualShock 4 controllers, fhe `type` needs to be `dualshock`.
-Additionally you'll also have to set the key `device_num` counting up, starting at 1.
-With that, you can assign different (custom) cutouts for example to different controllers.
-The first parsed usually is the first connected controller, the second parsed the second and so on.
+In there, a variety of settings can be made, in fact fxmodes can even add their own! We'll only cover the settings affecting ImmersiveFx directly here.
 
-If you wanna use ScreenFX, you'll additionally need to set the key `cutout` with the value being either: `top`, `bottom`, `left`, `right`, `center`, or a custom value as specified in `custom_cutouts.py`. This will reflect the screen area projected onto the LEDs.
+|setting       |data type |optional |default    
+|--------------|----------|---------|-------
+|fxmode        |string    |yes      |null       
+|fps           |integer   |yes      |30         
+|devices       |object    |no       |null
 
-Optionally you can also set these keys:
-- `enabled`: either true or false, to enable/disable the device, defaults to true.
-- `flip`: either true or false, reverses the LED order to display the data the other way around, defaults to false.
-- `brightness`: float value between 0 and 1, sets the brightness of the LEDs where 0 is off and 1 is full brightness. Defaults to 1, but lower values like 0.75 may offer a more accurate color representation on LEDs like the ws2812 strips.
-- `port`: number, sets a custom port for the IP. defaults to `21324`, which is the default for wled.
+- `fxmode` sets the fxmode used on start. The value should match the name of the folder within fxmodes/
+
+If the fxmode isn't available or the key is not set, you'll get a menu with available modes on start.
+
+- `fps` sets the maximum amount of cycles done per second. 30 is a sane default in terms of latency, smoothness and required performance
+
+- `devices` is an object whose keys are named the way you want to name your devices. 
+Their values are objects where the following keys can be used. Keep in mind that different devices may use different keys as noted below.
+
+|key           |used by type |data type |optional |default
+|--------------|-------------|----------|---------|-----------
+|type          |all          |string    |no       |null
+|enabled       |all          |boolean   |yes      |true
+|flip          |all          |boolean   |yes      |false
+|brightness    |all          |float     |yes      |1.0
+|leds          |all          |integer   |yes      |1
+|ip            |wled         |string    |no       |null
+|port          |wled         |integer   |yes      |21324
+|path          |serial       |string    |no       |null
+|baud          |serial       |integer   |yes      |115200
+|device_num    |dualshock    |integer   |no       |null
+
+- `type`: its can be either wled, serial, or dualshock
+- `enable` enable or disable the device
+- `flip` reverses the LED order, only makes sense if there are more than 2 LEDs
+- `brightness` multiplier between 0.0 and 1.0 to set the brightness. Reduced values may yield more color accurate results on cheap LED strips
+- `leds` amount of LEDs the device has
+
+
+- `ip` IP address of the WLED device
+- `port` Port of the WLED device for UDP communication
+
+- `path` Path to the serial device. For example '/dev/ttyACM0' on Linux and mac OS, or 'COM3' on Windows
+- `baud`: baudrate for communication, must match with the client
+
+- `device_num` counting up, starting at 1. used to differentiate multiple controllers.
 
 ## Notes
-For ds4 support, you need to first copy the `ds4perm` file from this repo to /opt, then run `sudo chmod +x /opt/ds4perm` to make it executable. Then you'll need to copy the `10-local.rules`, also from this repo, to `/etc/udev/rules.d/`
+For dualshock (4) support, you need to first copy the `ds4perm` file from this repo to /opt, then run `sudo chmod +x /opt/ds4perm` to make it executable.
+After this, you'll need to copy the `10-local.rules`, also from this repo, to `/etc/udev/rules.d/`
 
-Just to be safe, run `sudo udevadm control --reload` to reload udev rules.
-You may need to reconnect the controller. Also it currently may only work via bluetooth.
+Just to be safe, run `sudo udevadm control --reload` to reload udev rules. You also need to add you user to the `users` group if not done already and re-login,
+or change it with something else in `/opt/ds4perm`.
+
+If the controller was connected during this, it needs to be reconnected. Also it currently only works via bluetooth.
+
+For the receiving end of serial devices, ImmersiveFX sends the amount of LEDs * 3 as bytes, alternating between red green and blue values, very similar to how wled receives data.
