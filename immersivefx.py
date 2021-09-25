@@ -71,9 +71,9 @@ class Core:
         """
         #  These keys need to be set per device, everything else has some kinda default instead
         required_keys = {
-            'wled': {'ip', 'leds', 'cutout'},
-            'serial': {'path', 'leds', 'cutout'},
-            'dualshock': {'device_num', 'cutout'},
+            'wled': {'ip', 'leds'},
+            'serial': {'path', 'leds'},
+            'dualshock': {'device_num'},
         }
 
         # Here we'll put the final configurations
@@ -102,7 +102,7 @@ class Core:
                                 'enabled': device_enabled,
                                 'brightness': device.get('brightness', 1),
                                 'flip': device.get('flip', False),
-                                'color_correction': device.get('color_correction', False)
+                                'color_temperature': device.get('color_temperature')
                             }
 
                             if device_type == 'wled':
@@ -229,6 +229,7 @@ class Core:
                 start = time()
 
                 data = np.array(self.device_processing(device, device_instance))
+                data = (data * device_instance.brightness * device_instance.color_temperature).astype(int)
 
                 if device_instance.flip:
                     data = np.flip(data, axis=0)

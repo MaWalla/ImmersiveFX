@@ -18,7 +18,8 @@
     "arduino-thingy": {
       "type": "serial",
       "leds": 24,
-      "path": "/dev/ttyACM0"
+      "path": "/dev/ttyACM0",
+      "color_temperature": 5600
     },
     "ps4": {
       "type": "dualshock",

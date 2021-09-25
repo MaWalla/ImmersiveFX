@@ -68,25 +68,26 @@ If the fxmode isn't available or the key is not set, you'll get a menu with avai
 - `devices` is an object whose keys are named the way you want to name your devices. 
 Their values are objects where the following keys can be used. Keep in mind that different devices may use different keys as noted below.
 
-|key           |used by type |data type |optional |default
-|--------------|-------------|----------|---------|-----------
-|type          |all          |string    |no       |null
-|enabled       |all          |boolean   |yes      |true
-|flip          |all          |boolean   |yes      |false
-|brightness    |all          |float     |yes      |1.0
-|leds          |all          |integer   |yes      |1
-|ip            |wled         |string    |no       |null
-|port          |wled         |integer   |yes      |21324
-|path          |serial       |string    |no       |null
-|baud          |serial       |integer   |yes      |115200
-|device_num    |dualshock    |integer   |no       |null
+|key               |used by type |data type |optional |default
+|------------------|-------------|----------|---------|-----------
+|type              |all          |string    |no       |null
+|enabled           |all          |boolean   |yes      |true
+|flip              |all          |boolean   |yes      |false
+|brightness        |all          |float     |yes      |1.0
+|leds              |all          |integer   |yes      |1
+|color_temperature |all          |integer   |yes      |null
+|ip                |wled         |string    |no       |null
+|port              |wled         |integer   |yes      |21324
+|path              |serial       |string    |no       |null
+|baud              |serial       |integer   |yes      |115200
+|device_num        |dualshock    |integer   |no       |null
 
 - `type`: its can be either wled, serial, or dualshock
 - `enable` enable or disable the device
 - `flip` reverses the LED order, only makes sense if there are more than 2 LEDs
 - `brightness` multiplier between 0.0 and 1.0 to set the brightness. Reduced values may yield more color accurate results on cheap LED strips
 - `leds` amount of LEDs the device has
-
+- `color_temperature` a value between 1000 and 12000 in steps of 100, representing the color temperature in Kelvin.
 
 - `ip` IP address of the WLED device
 - `port` Port of the WLED device for UDP communication
