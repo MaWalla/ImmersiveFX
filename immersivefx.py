@@ -14,12 +14,12 @@ class Core:
     target_versions = None  # 'dev' works best for builtin fxmodes, external stuff should name actual versions though
     target_platforms = None  # check https://docs.python.org/3/library/sys.html#sys.platform or use 'all' if it applies
 
-    def __init__(self, core_version, config, *args, flags=[], **kwargs):
+    def __init__(self, core_version, config, launch_arguments, *args, **kwargs):
         """
         fancy little base class, make your fxmode inherit from it to spare yourself unnecessary work
         or don't, I'm a comment not a cop.
         """
-        self.flags = flags
+        self.launch_arguments = launch_arguments
         self.check_target(core_version)
 
         self.config = config
@@ -148,7 +148,7 @@ class Core:
         checks if the user's ImmersiveFX Core version and platform match the fxmode requirements
         can be overridden with --no-version-check and --no-platform-check, expect errors in this case though
         """
-        if '--no-version-check' not in self.flags:
+        if not self.launch_arguments.no_version_check:
             if core_version not in self.target_versions and 'dev' not in self.target_versions:
                 print('your ImmersiveFX Core is on version %(core)s but it needs to be %(targets)s.' % {
                     'core': core_version,
@@ -156,7 +156,7 @@ class Core:
                 })
                 exit()
 
-        if '--no-platform-check' not in self.flags:
+        if not self.launch_arguments.no_platform_check:
             if sys.platform not in self.target_platforms and 'all' not in self.target_platforms:
                 print('your platform is %(platform)s but it needs to be %(targets)s.' % {
                     'platform': sys.platform,
@@ -194,9 +194,10 @@ class Core:
             duration = (time() - start) * 1000
 
             if duration > self.frame_sleep:
-                print('WARNING: data cycle took longer than frame time!')
-                print(f'frame time: {round(self.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
-                print('If this happens repeatedly, consider lowering the fps.')
+                if not self.launch_arguments.no_performance_warnings:
+                    print('WARNING: data cycle took longer than frame time!')
+                    print(f'frame time: {round(self.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
+                    print('If this happens repeatedly, consider lowering the fps.')
             else:
                 sleep((self.frame_sleep - duration) / 1000)
 
@@ -239,8 +240,9 @@ class Core:
                 duration = (time() - start) * 1000
 
                 if duration > self.frame_sleep:
-                    print(f'WARNING: device "{device_instance.name}" cycle took longer than frame time!')
-                    print(f'frame time: {round(self.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
-                    print('If this happens repeatedly, consider lowering the fps.')
+                    if not self.launch_arguments.no_performance_warnings:
+                        print(f'WARNING: device "{device_instance.name}" cycle took longer than frame time!')
+                        print(f'frame time: {round(self.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
+                        print('If this happens repeatedly, consider lowering the fps.')
                 else:
                     sleep((self.frame_sleep - duration) / 1000)

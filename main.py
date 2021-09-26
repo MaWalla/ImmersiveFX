@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 import json
@@ -6,16 +7,39 @@ from time import sleep
 from utils import manage_requirements
 
 
-VERSION = '1.0.1'  # TODO find a better way than this, grabbing git tags perhaps
+VERSION = '1.1.0'  # TODO find a better way than this, grabbing git tags perhaps
 
 
-if sys.prefix == sys.base_prefix:
-    print('Looks like you aren\'t running ImmersiveFX inside a virtual environment')
-    print('This will likely cause issues or prevent it from running altogether')
-    print()
+parser = argparse.ArgumentParser()
 
-else:
-    manage_requirements()
+arg_texts = {
+    'd': 'skip dependency check on start',
+    'p': 'skip platform check for fxmodes',
+    's': 'skip version check for fxmodes',
+    'w': 'surpresses warnings when cycles can\'t keep up with frame times',
+}
+
+parser.add_argument('-d', '--no-deps', help=arg_texts.get('d'), action='store_true')
+parser.add_argument('-p', '--no-platform-check', help=arg_texts.get('p'), action='store_true')
+parser.add_argument('-s', '--no-version-check', help=arg_texts.get('s'), action='store_true')
+parser.add_argument('-w', '--no-performance-warnings', help=arg_texts.get('w'), action='store_true')
+
+args = parser.parse_args()
+
+no_dependency_check = args.no_deps
+flags = {
+    'no_version_check': args.no_version_check,
+    'no_platform_check': args.no_platform_check,
+}
+
+if not no_dependency_check:
+    if sys.prefix == sys.base_prefix:
+        print('Looks like you aren\'t running ImmersiveFX inside a virtual environment')
+        print('This will likely cause issues or prevent it from running altogether')
+        print()
+
+    else:
+        manage_requirements()
 
 try:
     with open('config.json') as file:
@@ -60,15 +84,11 @@ while not selected_fxmode:
         print(f'Invalid choice! It must be a number bigger than 0 and smaller than {len(valid_fxmodes)}, try again!')
         exit()
 
-
-params = {
-    'version': VERSION,
-    'config': config,
-    'flags': sys.argv,
-    'core_version': VERSION,
-}
-
-fxmode = selected_fxmode(**params)
+fxmode = selected_fxmode(
+    core_version=VERSION,
+    config=config,
+    launch_arguments=args,
+)
 
 print('')
 print('ImmersiveFX Core version %s' % VERSION)

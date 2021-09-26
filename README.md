@@ -41,11 +41,18 @@ Distributions such as Ubuntu or Debian might still link `python` to `python2` an
 
 - run `python -m venv env` to create a virtual environment named `env`.
 - run `source env/bin/activate` (if you use fish for whatever reason its `env/bin/activate.fish`) to enter the venv.
-- run `pip install -r requirements.txt` to install dependencies.
 
-ImmersiveFX can now be run with `python main.py`
+You're almost ready now, but you need to configure it first though, see below!
 
-You'll need to configure it first though, see below!
+Once done, ImmersiveFX can now be run with `python main.py`
+
+On the first launch/whenever there are changes, ImmersiveFX will ask you if you want to install the requirements.
+
+There are launch arguments to change the behaviour:
+  - `-d` skips checking the dependencies, so requirements won't be installed. I recommend that you only use it when there are repeated issues with the installation
+  - `-p` skips the platform check for fxmodes, generally not recommended, but who am I to order you around?
+  - `-s` skips the version check for fxmodes, generally also not recommended, but yet again, who am I to order you around?
+  - `-w` surpresses warnings when a frame cycle takes longer than the intended frametime. Recommended if you're annoyed by occaional warnings when things are fine otherwise
 
 ## Configuration
 
