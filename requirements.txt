@@ -1,4 +1,2 @@
-mss==6.1.0
-numpy==1.21.1
+numpy==1.21.2
 pyserial==3.5
-screeninfo==0.7

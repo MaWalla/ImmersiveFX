@@ -3,7 +3,19 @@ import sys
 import json
 from time import sleep
 
+from utils import manage_requirements
+
+
 VERSION = '1.0.1'  # TODO find a better way than this, grabbing git tags perhaps
+
+
+if sys.prefix == sys.base_prefix:
+    print('Looks like you aren\'t running ImmersiveFX inside a virtual environment')
+    print('This will likely cause issues or prevent it from running altogether')
+    print()
+
+else:
+    manage_requirements()
 
 try:
     with open('config.json') as file:
