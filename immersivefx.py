@@ -23,10 +23,11 @@ class Core:
         self.check_target(core_version)
 
         self.config = config
-        self.devices = self.parse_devices(config)
+        self.devices = {}
+
+        self.parse_devices(config)
 
         self.data_thread = None
-        self.device_threads = []
 
         self.device_classes = {
             'wled': WLED,
@@ -50,17 +51,15 @@ class Core:
             kwargs={},
         )
 
-        self.device_threads = [
-            threading.Thread(
-                target=self.device_loop,
-                args=({'name': device, **device_config},),
-                kwargs={},
-            ) for device, device_config in self.devices.items()
-        ]
-
         self.data_thread.start()
-        for thread in self.device_threads:
-            thread.start()
+        self.start_device_threads()
+
+    def start_device_threads(self):
+        for device, device_config in self.devices.items():
+            thread = device_config.get('thread')
+            if thread:
+                if not thread.ident:
+                    thread.start()
 
     def parse_devices(self, config):
         """
@@ -102,7 +101,8 @@ class Core:
                                 'enabled': device_enabled,
                                 'brightness': device.get('brightness', 1),
                                 'flip': device.get('flip', False),
-                                'color_temperature': device.get('color_temperature')
+                                'color_temperature': device.get('color_temperature'),
+                                'thread': threading.Thread(),
                             }
 
                             if device_type == 'wled':
@@ -128,6 +128,12 @@ class Core:
                                     **base_config,
                                 }
 
+                            device_config['thread'] = threading.Thread(
+                                target=self.device_loop,
+                                args=[name],
+                                kwargs={},
+                            )
+
                             final_devices[name] = device_config
 
                         else:
@@ -141,7 +147,7 @@ class Core:
             print('Exiting now...')
             exit(1)
 
-        return final_devices
+        self.devices = final_devices
 
     def check_target(self, core_version):
         """
@@ -149,12 +155,22 @@ class Core:
         can be overridden with --no-version-check and --no-platform-check, expect errors in this case though
         """
         if not self.launch_arguments.no_version_check:
-            if core_version not in self.target_versions and 'dev' not in self.target_versions:
-                print('your ImmersiveFX Core is on version %(core)s but it needs to be %(targets)s.' % {
-                    'core': core_version,
+            match = None
+
+            core_major, core_minor, *_ = core_version.split('.')
+            for version in self.target_versions:
+                major, minor, *_ = version.split('.')
+
+                if (major, minor) == (core_major, core_minor):
+                    match = True
+
+            if not match:
+                print('Your ImmersiveFX Core is on version %(core)s but it needs to be on %(targets)s' % {
+                    'core': '.'.join([core_major, core_minor]),
                     'targets': ', '.join(self.target_versions),
                 })
-                exit()
+                print('for this FXMode to work!')
+                exit(1)
 
         if not self.launch_arguments.no_platform_check:
             if sys.platform not in self.target_platforms and 'all' not in self.target_platforms:
@@ -211,12 +227,13 @@ class Core:
         """
         return np.zeros([1, 3])
 
-    def device_loop(self, device):
+    def device_loop(self, device_name):
         """
         Thread manager for a device. Creates a class instance for it and runs a continuous loop to send data
 
-        :param device: device info as per config
+        :param device_name: key to fetch device_config
         """
+        device = self.devices.get(device_name)
         device_type = device.get('type')
         device_class = self.device_classes.get(device_type)
 
