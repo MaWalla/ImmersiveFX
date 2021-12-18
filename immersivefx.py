@@ -239,7 +239,7 @@ class Core:
         device_class = self.device_classes.get(device_type)
 
         if device_class:
-            device_instance = device_class(device)
+            device_instance = device_class(device, device_name)
 
             while True:
                 if not device_instance.enabled:

@@ -126,11 +126,11 @@ class Device:
         12000: [0.7647058823529411, 0.8196078431372549, 1.0]
     }
 
-    def __init__(self, device, *args, **kwargs):
+    def __init__(self, device, name, *args, **kwargs):
         """
         common attributes
         """
-        self.name = device.get('name')
+        self.name = name
         self.enabled = device.get('enabled')
 
         self.brightness = device.get('brightness', 1)
