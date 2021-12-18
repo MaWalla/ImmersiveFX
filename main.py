@@ -68,6 +68,12 @@ for fxmode in os.listdir(fxmode_path):
     except (ModuleNotFoundError, AttributeError):
         continue
 
+
+if not available_fxmodes:
+    print('No valid FXModes found, are the dependencies available (e.g. venv activated)? exiting...')
+    exit(1)
+
+
 valid_fxmodes = list(available_fxmodes)
 selected_fxmode = available_fxmodes.get(config.get('fxmode'))
 
@@ -82,7 +88,6 @@ while not selected_fxmode:
         selected_fxmode = available_fxmodes.get(valid_fxmodes[int(choice)])
     except (IndexError, ValueError):
         print(f'Invalid choice! It must be a number bigger than 0 and smaller than {len(valid_fxmodes)}, try again!')
-        exit()
 
 fxmode = selected_fxmode(
     core_version=VERSION,
