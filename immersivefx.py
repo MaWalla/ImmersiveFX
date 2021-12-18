@@ -102,6 +102,7 @@ class Core:
                                 'brightness': device.get('brightness', 1),
                                 'flip': device.get('flip', False),
                                 'color_temperature': device.get('color_temperature'),
+                                'saturation': device.get('saturation', 1),
                                 'thread': threading.Thread(),
                             }
 
@@ -247,7 +248,10 @@ class Core:
                 start = time()
 
                 data = np.array(self.device_processing(device, device_instance))
-                data = (data * device_instance.brightness * device_instance.color_temperature).astype(int)
+
+                data = (device_instance.apply_saturation(
+                    data * device_instance.brightness * device_instance.color_temperature
+                )).astype(int)
 
                 if device_instance.flip:
                     data = np.flip(data, axis=0)

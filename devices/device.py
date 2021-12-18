@@ -1,3 +1,5 @@
+import colorsys
+
 import numpy as np
 from math import sqrt
 
@@ -134,6 +136,7 @@ class Device:
         self.brightness = device.get('brightness', 1)
         self.flip = device.get('flip')
         self.leds = device.get('leds', 1)
+        self.saturation = device.get('saturation', 1)
         self.color_temperature = self.get_color_temperature(device.get('color_temperature'))
 
     def get_color_temperature(self, value):
@@ -152,23 +155,14 @@ class Device:
 
         return self.color_temperature_map.get(key, default)
 
-
-
-    def process_data(self, data):
+    def apply_saturation(self, data):
         """
-        converts a list of rgb values into something device-compatible
-        :param data: a list of rgb values
+        adjusts the saturation of input data
         """
 
-        if self.flip:
-            data = np.flip(data, axis=0)
+        new_values = np.array([colorsys.rgb_to_hsv(*value) for value in data]) * [1, self.saturation, 1]
 
-        flat_data = np.array([
-            np.array(value) * self.brightness
-            for value in data
-        ]).astype(int).ravel()
-
-        return flat_data
+        return np.array([colorsys.hsv_to_rgb(*value) for value in new_values]).clip(0, 255)
 
     def loop(self, data):
         """
