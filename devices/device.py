@@ -1,7 +1,6 @@
 import colorsys
 
 import numpy as np
-from math import sqrt
 
 __all__ = [
     'Device',
@@ -134,6 +133,7 @@ class Device:
         self.enabled = device.get('enabled')
 
         self.brightness = device.get('brightness', 1)
+        self.non_linear_brightness = device.get('non_linear_brightness', True)
         self.flip = device.get('flip')
         self.leds = device.get('leds', 1)
         self.saturation = device.get('saturation', 1)
@@ -155,12 +155,16 @@ class Device:
 
         return self.color_temperature_map.get(key, default)
 
-    def apply_saturation(self, data):
+    def apply_enhancements(self, data):
         """
         adjusts the saturation of input data
         """
 
-        new_values = np.array([colorsys.rgb_to_hsv(*value) for value in data]) * [1, self.saturation, 1]
+        if self.non_linear_brightness:
+            new_values = np.array([colorsys.rgb_to_hsv(*value) for value in data]) ** [1, 1, 2]
+            new_values = new_values * [1, self.saturation, 0.00390625]
+        else:
+            new_values = np.array([colorsys.rgb_to_hsv(*value) for value in data]) * [1, self.saturation, 1]
 
         return np.array([colorsys.hsv_to_rgb(*value) for value in new_values]).clip(0, 255)
 

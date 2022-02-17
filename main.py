@@ -103,4 +103,4 @@ while True:
     # the main thread must stay alive and should do as little as possible from this point on
     # in the future we may put some control mechanisms for the FXMode here, but
     # heavy lifting is done by the data thread and sending by device threads
-    sleep(5)
+    sleep(0.5)

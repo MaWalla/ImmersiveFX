@@ -249,7 +249,7 @@ class Core:
 
                 data = np.array(self.device_processing(device, device_instance))
 
-                data = (device_instance.apply_saturation(
+                data = (device_instance.apply_enhancements(
                     data * device_instance.brightness * device_instance.color_temperature
                 )).astype(int)
 
