@@ -17,12 +17,14 @@ arg_texts = {
     'p': 'skip platform check for fxmodes',
     's': 'skip version check for fxmodes',
     'w': 'surpresses warnings when cycles can\'t keep up with frame times',
+    't': 'single threaded mode. Slow, but useful for testing/debugging',
 }
 
 parser.add_argument('-d', '--no-deps', help=arg_texts.get('d'), action='store_true')
 parser.add_argument('-p', '--no-platform-check', help=arg_texts.get('p'), action='store_true')
 parser.add_argument('-s', '--no-version-check', help=arg_texts.get('s'), action='store_true')
 parser.add_argument('-w', '--no-performance-warnings', help=arg_texts.get('w'), action='store_true')
+parser.add_argument('-t', '--single-threaded', help=arg_texts.get('t'), action='store_true')
 
 args = parser.parse_args()
 

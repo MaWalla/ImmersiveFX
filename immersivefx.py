@@ -51,8 +51,20 @@ class Core:
             kwargs={},
         )
 
-        self.data_thread.start()
-        self.start_device_threads()
+        if self.launch_arguments.single_threaded:
+            while True:
+                start = time()
+
+                self.data_loop()
+                for device, device_config in self.devices.items():
+                    self.device_loop(device)
+
+                duration = (time() - start) * 1000
+                print(f'Cycle took {round(duration, 2)}ms')
+
+        else:
+            self.data_thread.start()
+            self.start_device_threads()
 
     def start_device_threads(self):
         for device, device_config in self.devices.items():
@@ -203,20 +215,23 @@ class Core:
         """
         Manages data cycle timing, for handling preferably use data_processing
         """
-        while True:
-            start = time()
-
+        if self.launch_arguments.single_threaded:
             self.data_processing()
+        else:
+            while True:
+                start = time()
 
-            duration = (time() - start) * 1000
+                self.data_processing()
 
-            if duration > self.frame_sleep:
-                if not self.launch_arguments.no_performance_warnings:
-                    print('WARNING: data cycle took longer than frame time!')
-                    print(f'frame time: {round(self.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
-                    print('If this happens repeatedly, consider lowering the fps.')
-            else:
-                sleep((self.frame_sleep - duration) / 1000)
+                duration = (time() - start) * 1000
+
+                if duration > self.frame_sleep:
+                    if not self.launch_arguments.no_performance_warnings:
+                        print('WARNING: data cycle took longer than frame time!')
+                        print(f'frame time: {round(self.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
+                        print('If this happens repeatedly, consider lowering the fps.')
+                else:
+                    sleep((self.frame_sleep - duration) / 1000)
 
     def device_processing(self, device, device_instance):
         """
@@ -238,32 +253,41 @@ class Core:
         device_type = device.get('type')
         device_class = self.device_classes.get(device_type)
 
+        def run_loop(instance):
+            data = np.array(self.device_processing(device, instance))
+
+            data = (instance.apply_enhancements(
+                data * instance.brightness * instance.color_temperature
+            )).astype(int)
+
+            if instance.flip:
+                data = np.flip(data, axis=0)
+
+            instance.loop(data)
+
         if device_class:
             device_instance = device_class(device, device_name)
 
-            while True:
+            if self.launch_arguments.single_threaded:
                 if not device_instance.enabled:
-                    break
+                    return None
+                run_loop(device_instance)
 
-                start = time()
+            else:
+                while True:
+                    if not device_instance.enabled:
+                        break
 
-                data = np.array(self.device_processing(device, device_instance))
+                    start = time()
 
-                data = (device_instance.apply_enhancements(
-                    data * device_instance.brightness * device_instance.color_temperature
-                )).astype(int)
+                    run_loop(device_instance)
 
-                if device_instance.flip:
-                    data = np.flip(data, axis=0)
+                    duration = (time() - start) * 1000
 
-                device_instance.loop(data)
-
-                duration = (time() - start) * 1000
-
-                if duration > self.frame_sleep:
-                    if not self.launch_arguments.no_performance_warnings:
-                        print(f'WARNING: device "{device_instance.name}" cycle took longer than frame time!')
-                        print(f'frame time: {round(self.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
-                        print('If this happens repeatedly, consider lowering the fps.')
-                else:
-                    sleep((self.frame_sleep - duration) / 1000)
+                    if duration > self.frame_sleep:
+                        if not self.launch_arguments.no_performance_warnings:
+                            print(f'WARNING: device "{device_instance.name}" cycle took longer than frame time!')
+                            print(f'frame time: {round(self.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
+                            print('If this happens repeatedly, consider lowering the fps.')
+                    else:
+                        sleep((self.frame_sleep - duration) / 1000)
