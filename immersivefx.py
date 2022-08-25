@@ -7,6 +7,37 @@ import numpy as np
 from devices import WLED, Serial, DualShock
 
 
+__all__ = ['ManagedLoopThread', 'Core']
+
+
+class ManagedLoopThread:
+
+    def __init__(self, target, args=(), kwargs={}):
+        self._active = False
+        self._target = target
+        self._thread = threading.Thread(target=self.loop, args=args, kwargs=kwargs)
+
+    def loop(self, *args, **kwargs):
+        while self._active:
+            if self._target(*args, **kwargs) != 0:  # if the method returns 0, it ran successfully
+                self._active = False  # otherwise stop and disable the thread
+
+    def start(self):
+        self._active = True
+        self._thread.start()
+
+    def stop(self):
+        self._active = False
+
+    @property
+    def active(self):
+        return self._active
+
+    @property
+    def thread(self):
+        return self._thread
+
+
 class Core:
     name = 'ImmersiveFX Core'  # override this in your fxmode
 
@@ -45,11 +76,6 @@ class Core:
         """
         initializes and starts data and device threads, call this in your fxmode, usually at the end
         """
-        self.data_thread = threading.Thread(
-            target=self.data_loop,
-            args=(),
-            kwargs={},
-        )
 
         if self.launch_arguments.single_threaded:
             while True:
@@ -63,15 +89,23 @@ class Core:
                 print(f'Cycle took {round(duration, 2)}ms')
 
         else:
-            self.data_thread.start()
+            self.start_data_thread()
             self.start_device_threads()
+
+    def start_data_thread(self):
+        self.data_thread = ManagedLoopThread(
+            target=self.data_loop,
+            args=(),
+            kwargs={},
+        )
+
+        self.data_thread.start()
 
     def start_device_threads(self):
         for device, device_config in self.devices.items():
             thread = device_config.get('thread')
             if thread:
-                if not thread.ident:
-                    thread.start()
+                thread.start()
 
     def parse_devices(self, config):
         """
@@ -141,7 +175,7 @@ class Core:
                                     **base_config,
                                 }
 
-                            device_config['thread'] = threading.Thread(
+                            device_config['thread'] = ManagedLoopThread(
                                 target=self.device_loop,
                                 args=[name],
                                 kwargs={},
@@ -221,7 +255,7 @@ class Core:
             while True:
                 start = time()
 
-                self.data_processing()
+                self.data_processing(*args, **kwargs)
 
                 duration = (time() - start) * 1000
 
@@ -232,6 +266,8 @@ class Core:
                         print('If this happens repeatedly, consider lowering the fps.')
                 else:
                     sleep((self.frame_sleep - duration) / 1000)
+
+        return 0
 
     def device_processing(self, device, device_instance):
         """
@@ -274,20 +310,21 @@ class Core:
                 run_loop(device_instance)
 
             else:
-                while True:
-                    if not device_instance.enabled:
-                        break
+                if not device_instance.enabled:
+                    return 1
 
-                    start = time()
+                start = time()
 
-                    run_loop(device_instance)
+                run_loop(device_instance)
 
-                    duration = (time() - start) * 1000
+                duration = (time() - start) * 1000
 
-                    if duration > self.frame_sleep:
-                        if not self.launch_arguments.no_performance_warnings:
-                            print(f'WARNING: device "{device_instance.name}" cycle took longer than frame time!')
-                            print(f'frame time: {round(self.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
-                            print('If this happens repeatedly, consider lowering the fps.')
-                    else:
+                if duration > self.frame_sleep:
+                    if not self.launch_arguments.no_performance_warnings:
+                        print(f'WARNING: device "{device_instance.name}" cycle took longer than frame time!')
+                        print(f'frame time: {round(self.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
+                        print('If this happens repeatedly, consider lowering the fps.')
+                else:
                         sleep((self.frame_sleep - duration) / 1000)
+
+        return 0

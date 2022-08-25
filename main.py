@@ -7,7 +7,7 @@ from time import sleep
 from utils import manage_requirements
 
 
-VERSION = '1.1.0'  # TODO find a better way than this, grabbing git tags perhaps
+VERSION = '1.2.0'  # TODO find a better way than this, grabbing git tags perhaps
 
 
 parser = argparse.ArgumentParser()
