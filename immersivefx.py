@@ -13,25 +13,40 @@ __all__ = ['ManagedLoopThread', 'Core']
 class ManagedLoopThread:
 
     def __init__(self, target, args=(), kwargs={}):
+        self._alive = False
         self._active = False
         self._target = target
         self._thread = threading.Thread(target=self.loop, args=args, kwargs=kwargs)
 
     def loop(self, *args, **kwargs):
-        while self._active:
-            if self._target(*args, **kwargs) != 0:  # if the method returns 0, it ran successfully
-                self._active = False  # otherwise stop and disable the thread
+        while self._alive:
+            while self._active:
+                if self._target(*args, **kwargs) != 0:  # if the method returns 0, it ran successfully
+                    self._active = False  # otherwise kill the thread
+                    self._alive = False
+
+            sleep(0.1)
 
     def start(self):
+        self._alive = True
         self._active = True
-        self._thread.start()
+        if not self._thread.ident:
+            self._thread.start()
 
     def stop(self):
         self._active = False
 
+    def kill(self):
+        self._active = False
+        self._alive = False
+
     @property
     def active(self):
         return self._active
+
+    @property
+    def alive(self):
+        return self._alive
 
     @property
     def thread(self):
@@ -45,11 +60,17 @@ class Core:
     target_versions = None  # 'dev' works best for builtin fxmodes, external stuff should name actual versions though
     target_platforms = None  # check https://docs.python.org/3/library/sys.html#sys.platform or use 'all' if it applies
 
+    ##################
+    # INITIALIZATION #
+    ##################
+
     def __init__(self, core_version, config, launch_arguments, *args, **kwargs):
         """
         fancy little base class, make your fxmode inherit from it to spare yourself unnecessary work
         or don't, I'm a comment not a cop.
         """
+        self.threads_started = False
+
         self.launch_arguments = launch_arguments
         self.check_target(core_version)
 
@@ -71,41 +92,6 @@ class Core:
         self.frame_sleep = 1000 / self.config.get('fps', 30)
 
         self.splash()
-
-    def start_threads(self):
-        """
-        initializes and starts data and device threads, call this in your fxmode, usually at the end
-        """
-
-        if self.launch_arguments.single_threaded:
-            while True:
-                start = time()
-
-                self.data_loop()
-                for device, device_config in self.devices.items():
-                    self.device_loop(device)
-
-                duration = (time() - start) * 1000
-                print(f'Cycle took {round(duration, 2)}ms')
-
-        else:
-            self.start_data_thread()
-            self.start_device_threads()
-
-    def start_data_thread(self):
-        self.data_thread = ManagedLoopThread(
-            target=self.data_loop,
-            args=(),
-            kwargs={},
-        )
-
-        self.data_thread.start()
-
-    def start_device_threads(self):
-        for device, device_config in self.devices.items():
-            thread = device_config.get('thread')
-            if thread:
-                thread.start()
 
     def parse_devices(self, config):
         """
@@ -239,6 +225,66 @@ class Core:
         print('*        No big deal but kinda boring, huh?       *')
         print('***************************************************')
 
+    ############
+    # HANDLING #
+    ############
+
+    def start_threads(self):
+        """
+        initializes and starts data and device threads, call this in your fxmode, usually at the end
+        """
+
+        if self.launch_arguments.single_threaded:
+            while True:
+                start = time()
+
+                self.data_loop()
+                for device, device_config in self.devices.items():
+                    self.device_loop(device)
+
+                duration = (time() - start) * 1000
+                print(f'Cycle took {round(duration, 2)}ms')
+
+        else:
+            self.start_data_thread()
+            self.start_device_threads()
+            self.threads_started = True
+
+    def start_data_thread(self):
+        self.data_thread = ManagedLoopThread(
+            target=self.data_loop,
+            args=(),
+            kwargs={},
+        )
+
+        self.data_thread.start()
+
+    def start_device_threads(self):
+        for device, device_config in self.devices.items():
+            thread = device_config.get('thread')
+            if thread:
+                thread.start()
+
+    def stop(self):
+        self.data_thread.stop()
+
+        for device, device_config in self.devices.items():
+            thread = device_config.get('thread')
+            if thread:
+                thread.stop()
+
+    def kill(self):
+        self.data_thread.kill()
+
+        for device, device_config in self.devices.items():
+            thread = device_config.get('thread')
+            if thread:
+                thread.kill()
+
+    ######################
+    # LOOPS / PROCESSING #
+    ######################
+
     def data_processing(self, *args, **kwargs):
         """
         Override this in your fxmode and continuously set self.raw_data
@@ -252,20 +298,19 @@ class Core:
         if self.launch_arguments.single_threaded:
             self.data_processing()
         else:
-            while True:
-                start = time()
+            start = time()
 
-                self.data_processing(*args, **kwargs)
+            self.data_processing(*args, **kwargs)
 
-                duration = (time() - start) * 1000
+            duration = (time() - start) * 1000
 
-                if duration > self.frame_sleep:
-                    if not self.launch_arguments.no_performance_warnings:
-                        print('WARNING: data cycle took longer than frame time!')
-                        print(f'frame time: {round(self.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
-                        print('If this happens repeatedly, consider lowering the fps.')
-                else:
-                    sleep((self.frame_sleep - duration) / 1000)
+            if duration > self.frame_sleep:
+                if not self.launch_arguments.no_performance_warnings:
+                    print('WARNING: data cycle took longer than frame time!')
+                    print(f'frame time: {round(self.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
+                    print('If this happens repeatedly, consider lowering the fps.')
+            else:
+                sleep((self.frame_sleep - duration) / 1000)
 
         return 0
 

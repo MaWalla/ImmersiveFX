@@ -52,7 +52,7 @@ There are launch arguments to change the behaviour:
   - `-d` skips checking the dependencies, so requirements won't be installed. I recommend that you only use it when there are repeated issues with the installation
   - `-p` skips the platform check for fxmodes, generally not recommended, but who am I to order you around?
   - `-s` skips the version check for fxmodes, generally also not recommended, but yet again, who am I to order you around?
-  - `-w` surpresses warnings when a frame cycle takes longer than the intended frametime. Recommended if you're annoyed by occaional warnings when things are fine otherwise
+  - `-w` surpresses warnings when a frame cycle takes longer than the intended frametime. Recommended if you're annoyed by occasional warnings when things are fine otherwise
 
 ## Configuration
 
@@ -60,11 +60,11 @@ Create a file named `config.json`, or copy/rename the provided `config.json.exam
 
 In there, a variety of settings can be made, in fact fxmodes can even add their own! We'll only cover the settings affecting ImmersiveFx directly here.
 
-|setting       |data type |optional |default    
-|--------------|----------|---------|-------
-|fxmode        |string    |yes      |null       
-|fps           |integer   |yes      |30         
-|devices       |object    |no       |null
+| setting | data type | optional | default |
+|---------|-----------|----------|---------|
+| fxmode  | string    | yes      | null    |
+| fps     | integer   | yes      | 30      |
+| devices | object    | no       | null    |
 
 - `fxmode` sets the fxmode used on start. The value should match the name of the folder within fxmodes/
 
@@ -75,19 +75,19 @@ If the fxmode isn't available or the key is not set, you'll get a menu with avai
 - `devices` is an object whose keys are named the way you want to name your devices. 
 Their values are objects where the following keys can be used. Keep in mind that different devices may use different keys as noted below.
 
-|key               |used by type |data type |optional |default
-|------------------|-------------|----------|---------|-----------
-|type              |all          |string    |no       |null
-|enabled           |all          |boolean   |yes      |true
-|flip              |all          |boolean   |yes      |false
-|brightness        |all          |float     |yes      |1.0
-|leds              |all          |integer   |yes      |1
-|color_temperature |all          |integer   |yes      |null
-|ip                |wled         |string    |no       |null
-|port              |wled         |integer   |yes      |21324
-|path              |serial       |string    |no       |null
-|baud              |serial       |integer   |yes      |115200
-|device_num        |dualshock    |integer   |no       |null
+| key               | used by type | data type | optional | default |
+|-------------------|--------------|-----------|----------|---------|
+| type              | all          | string    | no       | null    |
+| enabled           | all          | boolean   | yes      | true    |
+| flip              | all          | boolean   | yes      | false   |
+| brightness        | all          | float     | yes      | 1.0     |
+| leds              | all          | integer   | yes      | 1       |
+| color_temperature | all          | integer   | yes      | null    |
+| ip                | wled         | string    | no       | null    |
+| port              | wled         | integer   | yes      | 21324   |
+| path              | serial       | string    | no       | null    |
+| baud              | serial       | integer   | yes      | 115200  |
+| device_num        | dualshock    | integer   | no       | null    |
 
 - `type`: its can be either wled, serial, or dualshock
 - `enable` enable or disable the device
@@ -100,9 +100,18 @@ Their values are objects where the following keys can be used. Keep in mind that
 - `port` Port of the WLED device for UDP communication
 
 - `path` Path to the serial device. For example '/dev/ttyACM0' on Linux and mac OS, or 'COM3' on Windows
-- `baud`: baudrate for communication, must match with the client
+- `baud` baudrate for communication, must match with the client
 
 - `device_num` counting up, starting at 1. used to differentiate multiple controllers.
+
+## Usage
+While ImmersiveFX is running, there are commands available to alter its behaviour. Those can be typed in while it its running.
+Available commands are:
+
+- `reload` stops all threads and reloads the config and application core
+- `start` starts the threads
+- `stop` stops all the threads but keeps them active
+- `exit` kills all threads and exits the program
 
 ## Notes
 For dualshock (4) support, you need to first copy the `ds4perm` file from this repo to /opt, then run `sudo chmod +x /opt/ds4perm` to make it executable.

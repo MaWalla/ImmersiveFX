@@ -2,7 +2,6 @@ import argparse
 import os
 import sys
 import json
-from time import sleep
 
 from utils import manage_requirements
 
@@ -105,4 +104,39 @@ while True:
     # the main thread must stay alive and should do as little as possible from this point on
     # in the future we may put some control mechanisms for the FXMode here, but
     # heavy lifting is done by the data thread and sending by device threads
-    sleep(0.5)
+    command = input()
+    if command == 'reload':
+        print('reloading...')
+        fxmode.stop()
+
+        try:
+            with open('config.json') as file:
+                config = json.load(file)
+        except FileNotFoundError:
+            print('config file not found. you need to place config.json into the main.py directory.')
+            print('There is a config.json.example to use as starting point.')
+            exit()
+
+        fxmode = selected_fxmode(
+            core_version=VERSION,
+            config=config,
+            launch_arguments=args,
+        )
+        print('reload done.')
+
+    if command == 'start':
+        print('starting threads...')
+        fxmode.start_threads()
+        print('started threads.')
+
+    if command == 'stop':
+        print('stoppting threads...')
+        fxmode.stop()
+        print('stopped threads.')
+
+    if command == 'exit':
+        print('exiting...')
+        fxmode.kill()
+        break
+
+exit()
