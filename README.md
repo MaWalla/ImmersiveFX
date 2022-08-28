@@ -6,7 +6,7 @@ It allows you to build Applications that process data to display them onto above
 
 [**ScreenFX**](https://github.com/MaWalla/ScreenFX), which can display the content of screen borders (similar to Phillips Ambilight) 
 
-[**PulseViz**](https://github.com/MaWalla/PulseViz), which analyzes a pulseaudio stream and either displays the average color based on the music, strongly inspired by [this Video](https://www.youtube.com/watch?v=Sk3v-92r7R0), or makes it a flowing rainbow, reacting to the bass.
+[**PulseViz**](https://github.com/MaWalla/PulseViz), which analyzes a pulseaudio stream and allows to display it in various ways.
 The backend is based off [this Project](https://github.com/pckbls/pulseviz.py).
 
 Besides that, you're hopefully only limited by your creativity. If you're limited by the framework however, consider making a pull request or issue!
@@ -26,8 +26,8 @@ DualShock**: This currently only refers to DS4 controllers. While I do own a DS5
 
 ## Requirements
 
-- Python 3.9, something older/newer may work, but I recommend this version.
-- pip and optionally venv to manage the requirements.txt
+- Python 3.10, something older/newer may work, but I recommend this version.
+- pip and venv to manage the requirements.txt
 
 ## Installation
 
