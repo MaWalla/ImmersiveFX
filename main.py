@@ -101,47 +101,51 @@ print('')
 print('ImmersiveFX Core version %s' % VERSION)
 print('---------------------------------------------------')
 
-while True:
-    # the main thread must stay alive and should do as little as possible from this point on.
-    # heavy lifting is done by the data thread and sending by device threads
+try:
+    while True:
+        # the main thread must stay alive and should do as little as possible from this point on.
+        # heavy lifting is done by the data thread and sending by device threads
 
-    if args.display_frametimes:
-        command = ''
-        sleep(1)
-    else:
-        command = input()
-    if command == 'reload':
-        print('reloading...')
-        fxmode.stop()
+        if args.display_frametimes:
+            command = ''
+            sleep(1)
+        else:
+            command = input()
+        if command == 'reload':
+            print('reloading...')
+            fxmode.stop()
 
-        try:
-            with open('config.json') as file:
-                config = json.load(file)
-        except FileNotFoundError:
-            print('config file not found. you need to place config.json into the main.py directory.')
-            print('There is a config.json.example to use as starting point.')
-            exit()
+            try:
+                with open('config.json') as file:
+                    config = json.load(file)
+            except FileNotFoundError:
+                print('config file not found. you need to place config.json into the main.py directory.')
+                print('There is a config.json.example to use as starting point.')
+                exit()
 
-        fxmode = selected_fxmode(
-            core_version=VERSION,
-            config=config,
-            launch_arguments=args,
-        )
-        print('reload done.')
+            fxmode = selected_fxmode(
+                core_version=VERSION,
+                config=config,
+                launch_arguments=args,
+            )
+            print('reload done.')
 
-    if command == 'start':
-        print('starting threads...')
-        fxmode.start_threads()
-        print('started threads.')
+        if command == 'start':
+            print('starting threads...')
+            fxmode.start_threads()
+            print('started threads.')
 
-    if command == 'stop':
-        print('stoppting threads...')
-        fxmode.stop()
-        print('stopped threads.')
+        if command == 'stop':
+            print('stoppting threads...')
+            fxmode.stop()
+            print('stopped threads.')
 
-    if command == 'exit':
-        print('exiting...')
-        fxmode.kill()
-        break
+        if command == 'exit':
+            print('exiting...')
+            fxmode.kill()
+            break
+
+except KeyboardInterrupt:
+    fxmode.kill()
 
 exit()
