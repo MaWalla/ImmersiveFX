@@ -1,11 +1,13 @@
 {
-  "fps": 30,
+  "data_fps": 30,
+  "device_fps": 60,
   "devices": {
     "desk": {
       "type": "wled",
       "ip": "192.168.178.10",
       "leds": 64,
-      "flip": true
+      "flip": true,
+      "fps": 40
     },
     "table": {
       "enabled": false,

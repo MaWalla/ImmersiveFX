@@ -134,8 +134,9 @@ class Device:
 
         self.brightness = device.get('brightness', 1)
         self.non_linear_brightness = device.get('non_linear_brightness', True)
-        self.flip = device.get('flip')
+        self.flip = device.get('flip', False)
         self.leds = device.get('leds', 1)
+        self.frame_sleep = 1000 / device.get('fps', 30)
         self.saturation = device.get('saturation', 1)
         self.color_temperature = self.get_color_temperature(device.get('color_temperature'))
 

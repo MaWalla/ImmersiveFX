@@ -75,9 +75,7 @@ class Core:
         self.check_target(core_version)
 
         self.config = config
-        self.devices = {}
-
-        self.parse_devices(config)
+        self.devices = self.parse_devices()
 
         self.data_thread = None
 
@@ -85,15 +83,16 @@ class Core:
             'wled': WLED,
             'serial': Serial,
             'dualshock': DualShock,
-
         }
 
         self.raw_data = np.zeros([1, 3])  # empty, but valid staring point
-        self.frame_sleep = 1000 / self.config.get('fps', 30)
+
+        old_fps = self.config.get('fps', 30)
+        self.data_frame_sleep = 1000 / self.config.get('data_fps', old_fps)
 
         self.splash()
 
-    def parse_devices(self, config):
+    def parse_devices(self):
         """
         reads config.json and configures everything according to it. This method only takes care of the basics,
         so you may wanna extend it if your fxmode takes/requires additional settings.
@@ -110,7 +109,7 @@ class Core:
         # Here we'll put the final configurations
         final_devices = {}
 
-        devices = config.get('devices')
+        devices = self.config.get('devices')
 
         if not devices:
             print('You didn\'t define devices in your config, which renders this program kinda useless')
@@ -135,7 +134,7 @@ class Core:
                                 'flip': device.get('flip', False),
                                 'color_temperature': device.get('color_temperature'),
                                 'saturation': device.get('saturation', 1),
-                                'thread': threading.Thread(),
+                                'fps': device.get('fps', self.config.get('device_fps', self.config.get('fps', 30)))
                             }
 
                             if device_type == 'wled':
@@ -180,7 +179,7 @@ class Core:
             print('Exiting now...')
             exit(1)
 
-        self.devices = final_devices
+        return final_devices
 
     def check_target(self, core_version):
         """
@@ -304,13 +303,13 @@ class Core:
 
             duration = (time() - start) * 1000
 
-            if duration > self.frame_sleep:
+            if duration > self.data_frame_sleep:
                 if not self.launch_arguments.no_performance_warnings:
                     print('WARNING: data cycle took longer than frame time!')
-                    print(f'frame time: {round(self.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
+                    print(f'frame time: {round(self.data_frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
                     print('If this happens repeatedly, consider lowering the fps.')
             else:
-                sleep((self.frame_sleep - duration) / 1000)
+                sleep((self.data_frame_sleep - duration) / 1000)
 
         return 0
 
@@ -364,12 +363,12 @@ class Core:
 
                 duration = (time() - start) * 1000
 
-                if duration > self.frame_sleep:
+                if duration > device_instance.frame_sleep:
                     if not self.launch_arguments.no_performance_warnings:
                         print(f'WARNING: device "{device_instance.name}" cycle took longer than frame time!')
-                        print(f'frame time: {round(self.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
+                        print(f'frame time: {round(device_instance.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
                         print('If this happens repeatedly, consider lowering the fps.')
                 else:
-                        sleep((self.frame_sleep - duration) / 1000)
+                    sleep((device_instance.frame_sleep - duration) / 1000)
 
         return 0
