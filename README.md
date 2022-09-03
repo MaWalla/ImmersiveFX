@@ -123,3 +123,5 @@ or change it with something else in `/opt/ds4perm`.
 If the controller was connected during this, it needs to be reconnected. Also it currently only works via bluetooth.
 
 For the receiving end of serial devices, ImmersiveFX sends the amount of LEDs * 3 as bytes, alternating between red green and blue values, very similar to how wled receives data.
+
+If you want to learn more about how things work or have instructions for developing your own FXModes, check `docs/`.
