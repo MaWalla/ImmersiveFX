@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 import json
+from time import sleep
 
 from utils import manage_requirements
 
@@ -15,14 +16,14 @@ arg_texts = {
     'd': 'skip dependency check on start',
     'p': 'skip platform check for fxmodes',
     's': 'skip version check for fxmodes',
-    'w': 'surpresses warnings when cycles can\'t keep up with frame times',
+    'f': 'displays frame times per thread. Disables available commands while active',
     't': 'single threaded mode. Slow, but useful for testing/debugging',
 }
 
 parser.add_argument('-d', '--no-deps', help=arg_texts.get('d'), action='store_true')
 parser.add_argument('-p', '--no-platform-check', help=arg_texts.get('p'), action='store_true')
 parser.add_argument('-s', '--no-version-check', help=arg_texts.get('s'), action='store_true')
-parser.add_argument('-w', '--no-performance-warnings', help=arg_texts.get('w'), action='store_true')
+parser.add_argument('-f', '--display-frametimes', help=arg_texts.get('f'), action='store_true')
 parser.add_argument('-t', '--single-threaded', help=arg_texts.get('t'), action='store_true')
 
 args = parser.parse_args()
@@ -101,10 +102,14 @@ print('ImmersiveFX Core version %s' % VERSION)
 print('---------------------------------------------------')
 
 while True:
-    # the main thread must stay alive and should do as little as possible from this point on
-    # in the future we may put some control mechanisms for the FXMode here, but
+    # the main thread must stay alive and should do as little as possible from this point on.
     # heavy lifting is done by the data thread and sending by device threads
-    command = input()
+
+    if args.display_frametimes:
+        command = ''
+        sleep(1)
+    else:
+        command = input()
     if command == 'reload':
         print('reloading...')
         fxmode.stop()

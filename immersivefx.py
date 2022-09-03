@@ -77,7 +77,11 @@ class Core:
         self.config = config
         self.devices = self.parse_devices()
 
+        self.management_thread = None
         self.data_thread = None
+
+        self.data_duration = []
+        self.devices_duration = {device: [] for device in self.devices}
 
         self.device_classes = {
             'wled': WLED,
@@ -237,6 +241,7 @@ class Core:
             while True:
                 start = time()
 
+                self.management_loop()
                 self.data_loop()
                 for device, device_config in self.devices.items():
                     self.device_loop(device)
@@ -245,9 +250,19 @@ class Core:
                 print(f'Cycle took {round(duration, 2)}ms')
 
         else:
+            self.start_management_thread()
             self.start_data_thread()
             self.start_device_threads()
             self.threads_started = True
+
+    def start_management_thread(self):
+        self.management_thread = ManagedLoopThread(
+            target=self.management_loop,
+            args=(),
+            kwargs={},
+        )
+
+        self.management_thread.start()
 
     def start_data_thread(self):
         self.data_thread = ManagedLoopThread(
@@ -265,6 +280,7 @@ class Core:
                 thread.start()
 
     def stop(self):
+        self.management_thread.stop()
         self.data_thread.stop()
 
         for device, device_config in self.devices.items():
@@ -273,6 +289,7 @@ class Core:
                 thread.stop()
 
     def kill(self):
+        self.management_thread.kill()
         self.data_thread.kill()
 
         for device, device_config in self.devices.items():
@@ -283,6 +300,33 @@ class Core:
     ######################
     # LOOPS / PROCESSING #
     ######################
+
+    def management_loop(self):
+        sleep(1)
+
+        if self.launch_arguments.display_frametimes:
+            data_duration = round(np.array(self.data_duration or [0]).mean(), 2)
+            devices_duration = []
+
+            for device, device_config in self.devices.items():
+                device_frametime = round(np.array(self.devices_duration[device] or [0]).mean(), 2)
+                devices_duration = [
+                    *devices_duration,
+                    f'{device}: {round(1000 / device_frametime)}/{device_config.get("fps")} FPS ({device_frametime} ms)'
+                ]
+
+            print(
+                ' '.join([
+                    '\r'
+                    f'data: {round(1000 / data_duration)}/{self.config.get("data_fps")} FPS ({data_duration} ms)',
+                    *devices_duration,
+                ]),
+                end='',
+            )
+        self.data_duration = []
+        self.devices_duration = {device: [] for device in self.devices}
+
+        return 0
 
     def data_processing(self, *args, **kwargs):
         """
@@ -303,12 +347,9 @@ class Core:
 
             duration = (time() - start) * 1000
 
-            if duration > self.data_frame_sleep:
-                if not self.launch_arguments.no_performance_warnings:
-                    print('WARNING: data cycle took longer than frame time!')
-                    print(f'frame time: {round(self.data_frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
-                    print('If this happens repeatedly, consider lowering the fps.')
-            else:
+            self.data_duration.append(duration)
+
+            if duration < self.data_frame_sleep:
                 sleep((self.data_frame_sleep - duration) / 1000)
 
         return 0
@@ -334,7 +375,7 @@ class Core:
         device_class = self.device_classes.get(device_type)
 
         def run_loop(instance):
-            data = np.array(self.device_processing(device, instance))
+            data = np.array(self.device_processing(device, instance)).clip(0, 255)
 
             data = (instance.apply_enhancements(
                 data * instance.brightness * instance.color_temperature
@@ -363,12 +404,9 @@ class Core:
 
                 duration = (time() - start) * 1000
 
-                if duration > device_instance.frame_sleep:
-                    if not self.launch_arguments.no_performance_warnings:
-                        print(f'WARNING: device "{device_instance.name}" cycle took longer than frame time!')
-                        print(f'frame time: {round(device_instance.frame_sleep, 2)}ms, cycle time: {round(duration, 2)}ms')
-                        print('If this happens repeatedly, consider lowering the fps.')
-                else:
+                if duration < device_instance.frame_sleep:
                     sleep((device_instance.frame_sleep - duration) / 1000)
+
+                self.devices_duration[device_name].append(duration)
 
         return 0

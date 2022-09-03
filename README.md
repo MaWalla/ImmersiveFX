@@ -52,7 +52,7 @@ There are launch arguments to change the behaviour:
   - `-d` skips checking the dependencies, so requirements won't be installed. I recommend that you only use it when there are repeated issues with the installation
   - `-p` skips the platform check for fxmodes, generally not recommended, but who am I to order you around?
   - `-s` skips the version check for fxmodes, generally also not recommended, but yet again, who am I to order you around?
-  - `-w` surpresses warnings when a frame cycle takes longer than the intended frametime. Recommended if you're annoyed by occasional warnings when things are fine otherwise
+  - `-f` displays frame duration per thread. Notes: may be broken on Windows, commands defined in **Usage** are disabled while active
 
 ## Configuration
 
