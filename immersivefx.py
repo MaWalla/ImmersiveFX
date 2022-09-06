@@ -80,8 +80,8 @@ class Core:
         self.management_thread = None
         self.data_thread = None
 
-        self.data_duration = []
-        self.devices_duration = {device: [] for device in self.devices}
+        self.data_duration = [1]
+        self.devices_duration = {device: [1] for device in self.devices}
 
         self.device_classes = {
             'wled': WLED,
@@ -305,15 +305,16 @@ class Core:
         sleep(1)
 
         if self.launch_arguments.display_frametimes:
-            data_duration = round(np.array(self.data_duration or [0]).mean(), 2)
+            data_duration = round(np.array(self.data_duration or [1]).mean(), 2)
             devices_duration = []
 
             for device, device_config in self.devices.items():
-                device_frametime = round(np.array(self.devices_duration[device] or [0]).mean(), 2)
-                devices_duration = [
-                    *devices_duration,
-                    f'{device}: {round(1000 / device_frametime)}/{device_config.get("fps")} FPS ({device_frametime} ms)'
-                ]
+                if device_config['enabled']:
+                    device_frametime = round(np.array(self.devices_duration[device] or [1]).mean(), 2)
+                    devices_duration = [
+                        *devices_duration,
+                        f'{device}: {round(1000 / device_frametime)}/{device_config["fps"]} FPS ({device_frametime} ms)'
+                    ]
 
             print(
                 ' '.join([
